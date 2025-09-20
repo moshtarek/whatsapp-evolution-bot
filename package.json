@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/index.js",
+    "dev:local": "HOST=0.0.0.0 node --watch src/index.js",
     "start": "node src/index.js",
     "db:init": "node src/db.js init",
     "db:seed": "node src/db.js seed",

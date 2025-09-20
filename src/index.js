@@ -45,6 +45,7 @@ app.post('/rules', createRuleHandler);
 app.put('/rules/:id', updateRuleHandler);
 app.delete('/rules/:id', deleteRuleHandler);
 
-app.listen(config.server.port, () => {
-  console.log(`WA Bot listening on :${config.server.port}`);
+app.listen(config.server.port, config.server.host, () => {
+  const host = config.server.host === '0.0.0.0' ? 'all networks' : config.server.host;
+  console.log(`WA Bot listening on ${host}:${config.server.port}`);
 });
