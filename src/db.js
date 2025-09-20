@@ -49,6 +49,19 @@ async function reset() {
   await seed();
 }
 
+async function migrate() {
+  const db = await getDB();
+  const migratePath = path.join(__dirname, '..', 'db', 'migrate.sql');
+  try {
+    await runSQLFromFile(db, migratePath);
+    logger.info('DB migrated successfully');
+  } catch (err) {
+    logger.info('Migration already applied or error:', err.message);
+  }
+  await db.close();
+}
+
 if (process.argv[2] === 'init') init();
 if (process.argv[2] === 'seed') seed();
 if (process.argv[2] === 'reset') reset();
+if (process.argv[2] === 'migrate') migrate();

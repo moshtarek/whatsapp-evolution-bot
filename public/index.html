@@ -198,6 +198,16 @@
             word-break: break-word;
             font-size: 14px;
         }
+        .card-media {
+            color: #007bff;
+            font-size: 12px;
+            margin-bottom: 15px;
+            word-break: break-all;
+            background: rgba(0, 123, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border-left: 3px solid #007bff;
+        }
         
         .card-meta {
             display: flex;
@@ -600,6 +610,26 @@
                         <textarea id="reply" required placeholder="مثال: أهلاً وسهلاً! كيف يمكنني مساعدتك؟"></textarea>
                     </div>
                     
+                    <div class="form-group">
+                        <label for="replyType">نوع الرد:</label>
+                        <select id="replyType" onchange="toggleMediaFields()">
+                            <option value="text">نص</option>
+                            <option value="image">صورة</option>
+                            <option value="document">ملف</option>
+                        </select>
+                    </div>
+                    
+                    <div id="mediaFields" style="display: none;">
+                        <div class="form-group">
+                            <label for="mediaUrl">رابط الملف/الصورة:</label>
+                            <input type="url" id="mediaUrl" placeholder="https://example.com/file.jpg">
+                        </div>
+                        <div class="form-group" id="filenameField" style="display: none;">
+                            <label for="filename">اسم الملف:</label>
+                            <input type="text" id="filename" placeholder="document.pdf">
+                        </div>
+                    </div>
+                    
                     <div class="form-row">
                         <div class="form-group">
                             <label for="priority">الأولوية:</label>
@@ -941,6 +971,9 @@
             const statusText = rule.active ? 'نشط' : 'غير نشط';
             const matchTypeText = getMatchTypeText(rule.match_type);
             
+            const replyTypeIcon = rule.reply_type === 'image' ? '🖼️' : rule.reply_type === 'document' ? '📄' : '💬';
+            const replyTypeText = rule.reply_type === 'image' ? 'صورة' : rule.reply_type === 'document' ? 'ملف' : 'نص';
+            
             card.innerHTML = `
                 <div class="card-header">
                     <div class="card-id">#${rule.id}</div>
@@ -949,9 +982,11 @@
                 
                 <div class="card-pattern">${rule.pattern}</div>
                 <div class="card-reply">${rule.reply}</div>
+                ${rule.media_url ? `<div class="card-media">🔗 ${rule.media_url}</div>` : ''}
                 
                 <div class="card-meta">
                     <span class="meta-tag">${matchTypeText}</span>
+                    <span class="meta-tag" style="background: linear-gradient(135deg, #d4edda, #c3e6cb); color: #155724;">${replyTypeIcon} ${replyTypeText}</span>
                     <span class="meta-tag meta-priority">أولوية: ${rule.priority}</span>
                     <span class="meta-tag meta-lang">${rule.lang}</span>
                     ${rule.only_in_business_hours ? '<span class="meta-tag meta-hours">ساعات العمل</span>' : ''}
@@ -1006,10 +1041,27 @@
             document.getElementById('pattern').value = rule.pattern;
             document.getElementById('matchType').value = rule.match_type;
             document.getElementById('reply').value = rule.reply;
+            document.getElementById('replyType').value = rule.reply_type || 'text';
+            document.getElementById('mediaUrl').value = rule.media_url || '';
+            document.getElementById('filename').value = rule.filename || '';
             document.getElementById('lang').value = rule.lang;
             document.getElementById('priority').value = rule.priority;
             document.getElementById('active').value = rule.active;
             document.getElementById('businessHours').value = rule.only_in_business_hours;
+            toggleMediaFields();
+        }
+
+        function toggleMediaFields() {
+            const replyType = document.getElementById('replyType').value;
+            const mediaFields = document.getElementById('mediaFields');
+            const filenameField = document.getElementById('filenameField');
+            
+            if (replyType === 'text') {
+                mediaFields.style.display = 'none';
+            } else {
+                mediaFields.style.display = 'block';
+                filenameField.style.display = replyType === 'document' ? 'block' : 'none';
+            }
         }
 
         async function saveRule() {
@@ -1018,6 +1070,9 @@
                 pattern: document.getElementById('pattern').value,
                 match_type: document.getElementById('matchType').value,
                 reply: document.getElementById('reply').value,
+                reply_type: document.getElementById('replyType').value,
+                media_url: document.getElementById('mediaUrl').value || null,
+                filename: document.getElementById('filename').value || null,
                 lang: document.getElementById('lang').value,
                 priority: parseInt(document.getElementById('priority').value),
                 active: parseInt(document.getElementById('active').value),

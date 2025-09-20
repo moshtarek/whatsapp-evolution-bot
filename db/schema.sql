@@ -3,6 +3,9 @@ CREATE TABLE IF NOT EXISTS rules (
   pattern TEXT NOT NULL,
   match_type TEXT NOT NULL,           -- EXACT | STARTS_WITH | CONTAINS | REGEX
   reply TEXT NOT NULL,
+  reply_type TEXT DEFAULT 'text',     -- text | image | document
+  media_url TEXT,                     -- URL للصورة أو الملف
+  filename TEXT,                      -- اسم الملف (للمستندات)
   lang TEXT DEFAULT 'any',            -- any | ar | en
   active INTEGER DEFAULT 1,           -- 1=on, 0=off
   priority INTEGER DEFAULT 100,       -- smaller = higher priority

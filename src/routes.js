@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { sendText } from './services/evolution.js';
+import { sendText, sendImage, sendDocument } from './services/evolution.js';
 import { logger } from './utils/logger.js';
 import { isBusinessOpen, listRules, createRule, updateRule, deleteRule, getRule } from './models/rules.js';
 
@@ -19,6 +19,12 @@ function parseIncoming(body) {
   else if (m?.documentMessage?.caption) text = m.documentMessage.caption;
 
   return { number, text, fromMe: Boolean(key.fromMe), msgId: key.id || '', pushName: root?.pushName || body?.pushName || '' };
+}
+
+/** استخراج رقم الجوال من النص إذا بدأ بـ 9665 */
+function extractTargetNumber(text) {
+  const match = text.match(/9665\d{8}/);
+  return match ? match[0] : null;
 }
 
 /** مطابقة قاعدة */
@@ -107,8 +113,20 @@ export async function onIncoming(req, res) {
       const matched = matchRule(text, r);
       if (matched.ok) {
         const reply = await renderReply(r.reply, matched);
-        await sendText({ number, text: reply });
-        return res.status(200).json({ ok: true, rule_id: r.id });
+        
+        // تحديد الرقم المستهدف (إما المرسل أو رقم محدد)
+        const targetNumber = extractTargetNumber(text) || number;
+        
+        // إرسال حسب نوع الرد
+        if (r.reply_type === 'image' && r.media_url) {
+          await sendImage({ number: targetNumber, imageUrl: r.media_url, caption: reply });
+        } else if (r.reply_type === 'document' && r.media_url) {
+          await sendDocument({ number: targetNumber, documentUrl: r.media_url, filename: r.filename, caption: reply });
+        } else {
+          await sendText({ number: targetNumber, text: reply });
+        }
+        
+        return res.status(200).json({ ok: true, rule_id: r.id, target_number: targetNumber });
       }
     }
 

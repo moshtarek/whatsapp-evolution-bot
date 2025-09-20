@@ -67,3 +67,64 @@ export async function sendText({ number, text }) {
   }
   throw lastErr || new Error('All payload variants failed');
 }
+
+async function postSendMedia(payload, endpoint) {
+  const url = `/message/${endpoint}/${encodeURIComponent(config.evolution.instance)}`;
+  return api.post(url, payload, {
+    headers: { 'apikey': config.evolution.apiKey, 'Content-Type': 'application/json' }
+  });
+}
+
+export async function sendImage({ number, imageUrl, caption = '' }) {
+  if (!number || !imageUrl) throw new Error('sendImage: number and imageUrl are required');
+  const n = formatNumber(number);
+  const nJid = `${String(number).replace(/[^0-9]/g, '')}@s.whatsapp.net`;
+
+  const candidates = [
+    { tag: 'sendMedia', payload: { number: n, mediatype: 'image', media: imageUrl, caption } },
+    { tag: 'sendImage', payload: { number: n, image: imageUrl, caption } },
+    { tag: 'sendMedia_jid', payload: { remoteJid: nJid, mediatype: 'image', media: imageUrl, caption } },
+  ];
+
+  let lastErr = null;
+  for (const c of candidates) {
+    try {
+      const res = await postSendMedia(c.payload, c.tag === 'sendImage' ? 'sendImage' : 'sendMedia');
+      logger.info(`Sent image (${c.tag}) ->`, JSON.stringify(c.payload));
+      return res.data;
+    } catch (err) {
+      const status = err.response?.status;
+      logger.error(`sendImage (${c.tag}) error:`, status, err.response?.data || err.message);
+      lastErr = err;
+      if (status && ![400, 422].includes(status)) break;
+    }
+  }
+  throw lastErr || new Error('All image payload variants failed');
+}
+
+export async function sendDocument({ number, documentUrl, filename, caption = '' }) {
+  if (!number || !documentUrl) throw new Error('sendDocument: number and documentUrl are required');
+  const n = formatNumber(number);
+  const nJid = `${String(number).replace(/[^0-9]/g, '')}@s.whatsapp.net`;
+
+  const candidates = [
+    { tag: 'sendMedia', payload: { number: n, mediatype: 'document', media: documentUrl, fileName: filename, caption } },
+    { tag: 'sendDocument', payload: { number: n, document: documentUrl, fileName: filename, caption } },
+    { tag: 'sendMedia_jid', payload: { remoteJid: nJid, mediatype: 'document', media: documentUrl, fileName: filename, caption } },
+  ];
+
+  let lastErr = null;
+  for (const c of candidates) {
+    try {
+      const res = await postSendMedia(c.payload, c.tag === 'sendDocument' ? 'sendDocument' : 'sendMedia');
+      logger.info(`Sent document (${c.tag}) ->`, JSON.stringify(c.payload));
+      return res.data;
+    } catch (err) {
+      const status = err.response?.status;
+      logger.error(`sendDocument (${c.tag}) error:`, status, err.response?.data || err.message);
+      lastErr = err;
+      if (status && ![400, 422].includes(status)) break;
+    }
+  }
+  throw lastErr || new Error('All document payload variants failed');
+}
