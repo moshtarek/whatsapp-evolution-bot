@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { sendText } from './services/evolution.js';
 import { logger } from './utils/logger.js';
-import { isBusinessOpen, listRules, createRule, updateRule, deleteRule, getRule } from './models/rules.js'; // <- سنضيف models أدناه
+import { isBusinessOpen, listRules, createRule, updateRule, deleteRule, getRule } from './models/rules.js';
 
 /** استخراج الرقم والنص من Payload Evolution (يدعم data{} وبدونه) */
 function parseIncoming(body) {
@@ -37,11 +37,26 @@ function matchRule(input, rule) {
 }
 
 /** استبدال متغيرات في الرد */
-function renderReply(template, ctx) {
+async function renderReply(template, ctx) {
   let out = template;
   out = out.replace(/\{\{now\}\}/g, dayjs().format('YYYY-MM-DD HH:mm:ss'));
   if (ctx.tail) out = out.replace(/\{\{tail\}\}/g, ctx.tail.trim());
   if (ctx.groups && ctx.groups.length) ctx.groups.forEach((g, i) => { out = out.replace(new RegExp('\\$' + (i + 1), 'g'), g); });
+  
+  // إضافة دعم {{records}} لعرض جميع السجلات
+  if (out.includes('{{records}}')) {
+    const rules = await listRules();
+    let recordsText = '';
+    rules.forEach((rule, index) => {
+      recordsText += `${index + 1}. النمط: "${rule.pattern}"\n`;
+      recordsText += `   النوع: ${rule.match_type}\n`;
+      recordsText += `   الرد: "${rule.reply.substring(0, 50)}${rule.reply.length > 50 ? '...' : ''}"\n`;
+      recordsText += `   نشط: ${rule.active ? 'نعم' : 'لا'}\n`;
+      recordsText += `   الأولوية: ${rule.priority}\n\n`;
+    });
+    out = out.replace(/\{\{records\}\}/g, recordsText || 'لا توجد سجلات');
+  }
+  
   return out;
 }
 
@@ -91,7 +106,7 @@ export async function onIncoming(req, res) {
       if (r.only_in_business_hours && !open) continue;
       const matched = matchRule(text, r);
       if (matched.ok) {
-        const reply = renderReply(r.reply, matched);
+        const reply = await renderReply(r.reply, matched);
         await sendText({ number, text: reply });
         return res.status(200).json({ ok: true, rule_id: r.id });
       }
