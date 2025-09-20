@@ -14,6 +14,7 @@ RUN npm ci --omit=dev && npm rebuild sqlite3
 # Copy source code
 COPY src/ ./src/
 COPY db/ ./db/
+COPY public/ ./public/
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \

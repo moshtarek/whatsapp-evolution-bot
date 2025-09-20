@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة قواعد البوت</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; margin-bottom: 30px; }
+        .form-section { background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+        .form-group { flex: 1; min-width: 200px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        textarea { height: 80px; resize: vertical; }
+        button { background: #007cba; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #005a87; }
+        button.delete { background: #dc3545; }
+        button.delete:hover { background: #c82333; }
+        button.edit { background: #28a745; margin-left: 5px; }
+        button.edit:hover { background: #218838; }
+        .rules-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .rules-table th, .rules-table td { padding: 12px; text-align: right; border-bottom: 1px solid #ddd; }
+        .rules-table th { background: #f8f9fa; font-weight: bold; }
+        .rules-table tr:hover { background: #f5f5f5; }
+        .status { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .status.active { background: #d4edda; color: #155724; }
+        .status.inactive { background: #f8d7da; color: #721c24; }
+        .match-type { padding: 4px 8px; border-radius: 4px; font-size: 12px; background: #e9ecef; color: #495057; }
+        .loading { display: none; text-align: center; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 إدارة قواعد بوت واتساب</h1>
+        
+        <div class="form-section">
+            <h2>إضافة/تعديل قاعدة جديدة</h2>
+            <form id="ruleForm">
+                <input type="hidden" id="ruleId" value="">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="pattern">النمط/الكلمة المفتاحية:</label>
+                        <input type="text" id="pattern" required placeholder="مثال: مرحبا">
+                    </div>
+                    <div class="form-group">
+                        <label for="matchType">نوع المطابقة:</label>
+                        <select id="matchType" required>
+                            <option value="EXACT">تطابق كامل</option>
+                            <option value="STARTS_WITH">يبدأ بـ</option>
+                            <option value="CONTAINS">يحتوي على</option>
+                            <option value="REGEX">تعبير نمطي</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reply">الرد:</label>
+                        <textarea id="reply" required placeholder="مثال: أهلاً وسهلاً! كيف يمكنني مساعدتك؟"></textarea>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="lang">اللغة:</label>
+                        <select id="lang">
+                            <option value="ar">العربية</option>
+                            <option value="en">English</option>
+                            <option value="any">أي لغة</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="priority">الأولوية:</label>
+                        <input type="number" id="priority" value="10" min="1" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="active">الحالة:</label>
+                        <select id="active">
+                            <option value="1">نشط</option>
+                            <option value="0">غير نشط</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="businessHours">ساعات العمل فقط:</label>
+                        <select id="businessHours">
+                            <option value="0">لا</option>
+                            <option value="1">نعم</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" id="submitBtn">إضافة قاعدة</button>
+                <button type="button" id="cancelBtn" onclick="cancelEdit()" style="display:none; background:#6c757d;">إلغاء</button>
+            </form>
+        </div>
+
+        <div class="loading" id="loading">جاري التحميل...</div>
+        
+        <div>
+            <h2>القواعد الحالية</h2>
+            <table class="rules-table" id="rulesTable">
+                <thead>
+                    <tr>
+                        <th>الإجراءات</th>
+                        <th>ساعات العمل</th>
+                        <th>الحالة</th>
+                        <th>الأولوية</th>
+                        <th>اللغة</th>
+                        <th>نوع المطابقة</th>
+                        <th>الرد</th>
+                        <th>النمط</th>
+                        <th>الرقم</th>
+                    </tr>
+                </thead>
+                <tbody id="rulesBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+        
+        // تحميل القواعد عند بدء الصفحة
+        document.addEventListener('DOMContentLoaded', loadRules);
+        
+        // معالج إرسال النموذج
+        document.getElementById('ruleForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await saveRule();
+        });
+
+        async function loadRules() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                const response = await fetch('/rules');
+                const rules = await response.json();
+                displayRules(rules);
+            } catch (error) {
+                alert('خطأ في تحميل القواعد: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function displayRules(rules) {
+            const tbody = document.getElementById('rulesBody');
+            tbody.innerHTML = '';
+            
+            rules.forEach(rule => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <button class="edit" onclick="editRule(${rule.id})">تعديل</button>
+                        <button class="delete" onclick="deleteRule(${rule.id})">حذف</button>
+                    </td>
+                    <td>${rule.only_in_business_hours ? 'نعم' : 'لا'}</td>
+                    <td><span class="status ${rule.active ? 'active' : 'inactive'}">${rule.active ? 'نشط' : 'غير نشط'}</span></td>
+                    <td>${rule.priority}</td>
+                    <td>${rule.lang}</td>
+                    <td><span class="match-type">${getMatchTypeText(rule.match_type)}</span></td>
+                    <td style="max-width: 200px; word-wrap: break-word;">${rule.reply}</td>
+                    <td>${rule.pattern}</td>
+                    <td>${rule.id}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function getMatchTypeText(type) {
+            const types = {
+                'EXACT': 'تطابق كامل',
+                'STARTS_WITH': 'يبدأ بـ',
+                'CONTAINS': 'يحتوي على',
+                'REGEX': 'تعبير نمطي'
+            };
+            return types[type] || type;
+        }
+
+        async function saveRule() {
+            const ruleId = document.getElementById('ruleId').value;
+            const ruleData = {
+                pattern: document.getElementById('pattern').value,
+                match_type: document.getElementById('matchType').value,
+                reply: document.getElementById('reply').value,
+                lang: document.getElementById('lang').value,
+                priority: parseInt(document.getElementById('priority').value),
+                active: parseInt(document.getElementById('active').value),
+                only_in_business_hours: parseInt(document.getElementById('businessHours').value)
+            };
+
+            try {
+                let response;
+                if (ruleId) {
+                    // تعديل
+                    response = await fetch(`/rules/${ruleId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(ruleData)
+                    });
+                } else {
+                    // إضافة
+                    response = await fetch('/rules', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(ruleData)
+                    });
+                }
+
+                if (response.ok) {
+                    alert(ruleId ? 'تم تعديل القاعدة بنجاح!' : 'تم إضافة القاعدة بنجاح!');
+                    document.getElementById('ruleForm').reset();
+                    cancelEdit();
+                    loadRules();
+                } else {
+                    throw new Error('فشل في حفظ القاعدة');
+                }
+            } catch (error) {
+                alert('خطأ: ' + error.message);
+            }
+        }
+
+        async function editRule(id) {
+            try {
+                const response = await fetch(`/rules/${id}`);
+                const rule = await response.json();
+                
+                document.getElementById('ruleId').value = rule.id;
+                document.getElementById('pattern').value = rule.pattern;
+                document.getElementById('matchType').value = rule.match_type;
+                document.getElementById('reply').value = rule.reply;
+                document.getElementById('lang').value = rule.lang;
+                document.getElementById('priority').value = rule.priority;
+                document.getElementById('active').value = rule.active;
+                document.getElementById('businessHours').value = rule.only_in_business_hours;
+                
+                document.getElementById('submitBtn').textContent = 'تعديل القاعدة';
+                document.getElementById('cancelBtn').style.display = 'inline-block';
+            } catch (error) {
+                alert('خطأ في تحميل القاعدة: ' + error.message);
+            }
+        }
+
+        function cancelEdit() {
+            document.getElementById('ruleId').value = '';
+            document.getElementById('submitBtn').textContent = 'إضافة قاعدة';
+            document.getElementById('cancelBtn').style.display = 'none';
+            document.getElementById('ruleForm').reset();
+        }
+
+        async function deleteRule(id) {
+            if (!confirm('هل أنت متأكد من حذف هذه القاعدة؟')) return;
+            
+            try {
+                const response = await fetch(`/rules/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    alert('تم حذف القاعدة بنجاح!');
+                    loadRules();
+                } else {
+                    throw new Error('فشل في حذف القاعدة');
+                }
+            } catch (error) {
+                alert('خطأ: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,12 +1,20 @@
 import express from 'express';
 import morgan from 'morgan';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { config } from './config.js';
 import {
   onIncoming, health,
   listRulesHandler, getRuleHandler, createRuleHandler, updateRuleHandler, deleteRuleHandler
 } from './routes.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
+
+// خدمة الملفات الثابتة (الواجهة الويب)
+app.use(express.static(path.join(__dirname, '../public')));
 
 // JSON / x-www-form-urlencoded / نص خام
 app.use((req, res, next) => {
