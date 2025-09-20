@@ -13,7 +13,7 @@ export const config = {
     apiKey: env('EVOLUTION_API_KEY'),
   },
   server: {
-    host: env('HOST', 'localhost'),
+    host: env('HOST', '0.0.0.0'),
     port: env('BOT_PORT', 3001, Number),
     publicURL: env('BOT_PUBLIC_URL', ''),
   },
