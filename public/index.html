@@ -407,6 +407,81 @@
         body.modal-open {
             overflow: hidden;
         }
+        
+        /* Confirm Modal Styles */
+        .confirm-modal {
+            max-width: 450px;
+            border-radius: 20px;
+        }
+        .confirm-header {
+            text-align: center;
+            padding: 30px 30px 20px;
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            border-radius: 20px 20px 0 0;
+        }
+        .confirm-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            animation: shake 0.5s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .confirm-header h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .confirm-body {
+            padding: 30px;
+            text-align: center;
+        }
+        .confirm-body p {
+            margin: 0;
+            font-size: 16px;
+            color: #495057;
+            line-height: 1.5;
+        }
+        .confirm-actions {
+            display: flex;
+            gap: 15px;
+            padding: 0 30px 30px;
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.3s;
+            flex: 1;
+        }
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(220, 53, 69, 0.3);
+        }
+        .btn-cancel {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.3s;
+            flex: 1;
+        }
+        .btn-cancel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(108, 117, 125, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -460,7 +535,24 @@
         </div>
     </div>
 
-    <!-- Modal -->
+    <!-- Confirm Modal -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content confirm-modal">
+            <div class="confirm-header">
+                <div class="confirm-icon">⚠️</div>
+                <h3 id="confirmTitle">تأكيد العملية</h3>
+            </div>
+            <div class="confirm-body">
+                <p id="confirmMessage">هل أنت متأكد من هذا الإجراء؟</p>
+            </div>
+            <div class="confirm-actions">
+                <button class="btn-danger" id="confirmYes">نعم، متأكد</button>
+                <button class="btn-cancel" id="confirmNo">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rule Modal -->
     <div class="modal" id="ruleModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -954,7 +1046,12 @@
         }
 
         async function deleteRule(id) {
-            if (!confirm('هل أنت متأكد من حذف هذه القاعدة؟')) return;
+            const confirmed = await showConfirm(
+                'حذف القاعدة',
+                'هل أنت متأكد من حذف هذه القاعدة؟ لا يمكن التراجع عن هذا الإجراء.'
+            );
+            
+            if (!confirmed) return;
             
             try {
                 const response = await fetch(`/rules/${id}`, { method: 'DELETE' });
@@ -967,6 +1064,48 @@
             } catch (error) {
                 showNotification('خطأ: ' + error.message, 'error');
             }
+        }
+
+        // Custom Confirm Dialog
+        function showConfirm(title, message) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('confirmModal');
+                const titleEl = document.getElementById('confirmTitle');
+                const messageEl = document.getElementById('confirmMessage');
+                const yesBtn = document.getElementById('confirmYes');
+                const noBtn = document.getElementById('confirmNo');
+                
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+                
+                modal.style.display = 'block';
+                document.body.classList.add('modal-open');
+                
+                const cleanup = () => {
+                    modal.style.display = 'none';
+                    document.body.classList.remove('modal-open');
+                    yesBtn.onclick = null;
+                    noBtn.onclick = null;
+                };
+                
+                yesBtn.onclick = () => {
+                    cleanup();
+                    resolve(true);
+                };
+                
+                noBtn.onclick = () => {
+                    cleanup();
+                    resolve(false);
+                };
+                
+                // Close on outside click
+                modal.onclick = (e) => {
+                    if (e.target === modal) {
+                        cleanup();
+                        resolve(false);
+                    }
+                };
+            });
         }
 
         async function editRule(id) {
@@ -983,20 +1122,23 @@
 
         // إغلاق المودال عند النقر خارجه
         window.onclick = function(event) {
-            const modal = document.getElementById('ruleModal');
-            if (event.target === modal) {
+            const ruleModal = document.getElementById('ruleModal');
+            const confirmModal = document.getElementById('confirmModal');
+            
+            if (event.target === ruleModal) {
                 closeModal();
             }
+            // Confirm modal handled in showConfirm function
         }
         
         // منع إغلاق المودال عند النقر على المحتوى
         document.addEventListener('DOMContentLoaded', function() {
-            const modalContent = document.querySelector('.modal-content');
-            if (modalContent) {
+            const modalContents = document.querySelectorAll('.modal-content');
+            modalContents.forEach(modalContent => {
                 modalContent.onclick = function(event) {
                     event.stopPropagation();
                 }
-            }
+            });
         });
     </script>
 </body>
