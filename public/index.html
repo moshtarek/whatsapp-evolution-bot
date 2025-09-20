@@ -183,6 +183,89 @@
             font-size: 16px;
             opacity: 0.8;
         }
+        
+        /* Search Styles */
+        .search-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        #searchInput {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+        #searchInput:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .search-filters {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .search-filters select {
+            padding: 10px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        .search-filters select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        /* Pagination Styles */
+        .pagination-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .pagination-info {
+            margin-bottom: 15px;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            padding: 10px 15px;
+            border: 2px solid #e9ecef;
+            background: white;
+            color: #495057;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .page-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+        .page-btn.active {
+            background: #667eea;
+            border-color: #667eea;
+            color: white;
+        }
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -196,12 +279,37 @@
             ➕ إضافة قاعدة جديدة
         </button>
         
+        <!-- Search Bar -->
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="🔍 البحث في القواعد..." onkeyup="handleSearch()">
+            <div class="search-filters">
+                <select id="statusFilter" onchange="handleSearch()">
+                    <option value="">جميع الحالات</option>
+                    <option value="1">نشط فقط</option>
+                    <option value="0">غير نشط فقط</option>
+                </select>
+                <select id="typeFilter" onchange="handleSearch()">
+                    <option value="">جميع الأنواع</option>
+                    <option value="EXACT">تطابق كامل</option>
+                    <option value="STARTS_WITH">يبدأ بـ</option>
+                    <option value="CONTAINS">يحتوي على</option>
+                    <option value="REGEX">تعبير نمطي</option>
+                </select>
+            </div>
+        </div>
+        
         <div class="loading hide" id="loading">
             <div>⏳ جاري التحميل...</div>
         </div>
         
         <div class="cards-container" id="cardsContainer">
             <!-- البطاقات ستظهر هنا -->
+        </div>
+        
+        <!-- Pagination -->
+        <div class="pagination-container" id="paginationContainer">
+            <div class="pagination-info" id="paginationInfo"></div>
+            <div class="pagination" id="pagination"></div>
         </div>
         
         <div class="empty-state" id="emptyState" style="display: none;">
@@ -405,6 +513,9 @@
     <script>
         const API_BASE = '';
         let currentRules = [];
+        let filteredRules = [];
+        let currentPage = 1;
+        const itemsPerPage = 12;
         
         // تحميل القواعد عند بدء الصفحة
         document.addEventListener('DOMContentLoaded', loadRules);
@@ -421,7 +532,10 @@
                 const response = await fetch('/rules');
                 const rules = await response.json();
                 currentRules = rules;
-                displayRules(rules);
+                filteredRules = rules;
+                currentPage = 1;
+                displayRules();
+                updatePagination();
             } catch (error) {
                 alert('خطأ في تحميل القواعد: ' + error.message);
             } finally {
@@ -429,28 +543,120 @@
             }
         }
 
+        function handleSearch() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+            
+            filteredRules = currentRules.filter(rule => {
+                const matchesSearch = !searchTerm || 
+                    rule.pattern.toLowerCase().includes(searchTerm) ||
+                    rule.reply.toLowerCase().includes(searchTerm);
+                
+                const matchesStatus = !statusFilter || rule.active.toString() === statusFilter;
+                const matchesType = !typeFilter || rule.match_type === typeFilter;
+                
+                return matchesSearch && matchesStatus && matchesType;
+            });
+            
+            currentPage = 1;
+            displayRules();
+            updatePagination();
+        }
+
         function showLoading(show) {
             const loading = document.getElementById('loading');
             loading.className = show ? 'loading show' : 'loading hide';
         }
 
-        function displayRules(rules) {
+        function displayRules() {
             const container = document.getElementById('cardsContainer');
             const emptyState = document.getElementById('emptyState');
             
-            if (rules.length === 0) {
+            if (filteredRules.length === 0) {
                 container.innerHTML = '';
                 emptyState.style.display = 'block';
+                document.getElementById('paginationContainer').style.display = 'none';
                 return;
             }
             
             emptyState.style.display = 'none';
-            container.innerHTML = '';
+            document.getElementById('paginationContainer').style.display = 'block';
             
-            rules.forEach(rule => {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageRules = filteredRules.slice(startIndex, endIndex);
+            
+            container.innerHTML = '';
+            pageRules.forEach(rule => {
                 const card = createRuleCard(rule);
                 container.appendChild(card);
             });
+        }
+
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredRules.length / itemsPerPage);
+            const paginationInfo = document.getElementById('paginationInfo');
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                document.getElementById('paginationContainer').style.display = 'none';
+                return;
+            }
+            
+            document.getElementById('paginationContainer').style.display = 'block';
+            
+            const startItem = (currentPage - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPage * itemsPerPage, filteredRules.length);
+            
+            paginationInfo.textContent = `عرض ${startItem}-${endItem} من ${filteredRules.length} قاعدة`;
+            
+            pagination.innerHTML = '';
+            
+            // Previous button
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'page-btn';
+            prevBtn.textContent = '← السابق';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => changePage(currentPage - 1);
+            pagination.appendChild(prevBtn);
+            
+            // Page numbers
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                pageBtn.textContent = i;
+                pageBtn.onclick = () => changePage(i);
+                pagination.appendChild(pageBtn);
+            }
+            
+            // Next button
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'page-btn';
+            nextBtn.textContent = 'التالي →';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.onclick = () => changePage(currentPage + 1);
+            pagination.appendChild(nextBtn);
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredRules.length / itemsPerPage);
+            if (page < 1 || page > totalPages) return;
+            
+            currentPage = page;
+            displayRules();
+            updatePagination();
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function createRuleCard(rule) {
@@ -560,10 +766,26 @@
 
                 if (response.ok) {
                     closeModal();
-                    loadRules();
+                    await loadRules(); // إعادة تحميل البيانات
                     showNotification(ruleId ? 'تم تعديل القاعدة بنجاح!' : 'تم إضافة القاعدة بنجاح!', 'success');
                 } else {
                     throw new Error('فشل في حفظ القاعدة');
+                }
+            } catch (error) {
+                showNotification('خطأ: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteRule(id) {
+            if (!confirm('هل أنت متأكد من حذف هذه القاعدة؟')) return;
+            
+            try {
+                const response = await fetch(`/rules/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    await loadRules(); // إعادة تحميل البيانات
+                    showNotification('تم حذف القاعدة بنجاح!', 'success');
+                } else {
+                    throw new Error('فشل في حذف القاعدة');
                 }
             } catch (error) {
                 showNotification('خطأ: ' + error.message, 'error');
@@ -574,22 +796,6 @@
             const rule = currentRules.find(r => r.id === id);
             if (rule) {
                 openModal(rule);
-            }
-        }
-
-        async function deleteRule(id) {
-            if (!confirm('هل أنت متأكد من حذف هذه القاعدة؟')) return;
-            
-            try {
-                const response = await fetch(`/rules/${id}`, { method: 'DELETE' });
-                if (response.ok) {
-                    loadRules();
-                    showNotification('تم حذف القاعدة بنجاح!', 'success');
-                } else {
-                    throw new Error('فشل في حذف القاعدة');
-                }
-            } catch (error) {
-                showNotification('خطأ: ' + error.message, 'error');
             }
         }
 
