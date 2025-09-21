@@ -186,8 +186,17 @@ export async function getRuleHandler(req, res) {
   res.json(row);
 }
 export async function createRuleHandler(req, res) {
-  const id = await createRule(req.body);
-  res.json({ id });
+  try {
+    const result = await createRule(req.body);
+    if (result.success) {
+      res.json({ id: result.id, message: 'تم إنشاء القاعدة بنجاح' });
+    } else {
+      res.status(400).json({ error: result.error });
+    }
+  } catch (error) {
+    logger.error('Error creating rule:', error);
+    res.status(500).json({ error: 'خطأ في إنشاء القاعدة' });
+  }
 }
 export async function updateRuleHandler(req, res) {
   const id = Number(req.params.id);

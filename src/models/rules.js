@@ -16,15 +16,24 @@ export async function getRule(id) {
 }
 export async function createRule(rule) {
   const db = await getDB();
-  const { pattern, match_type, reply, lang = 'any', active = 1, priority = 100, only_in_business_hours = 0 } = rule;
+  const { pattern, match_type, reply, reply_type = 'text', media_url, filename, lang = 'any', active = 1, priority = 100, only_in_business_hours = 0 } = rule;
   const now = dayjs().toISOString();
-  const res = await db.run(
-    `INSERT INTO rules (pattern, match_type, reply, lang, active, priority, only_in_business_hours, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [pattern, match_type, reply, lang, active ? 1 : 0, priority, only_in_business_hours ? 1 : 0, now, now]
-  );
-  await db.close();
-  return res.lastID;
+  
+  try {
+    const res = await db.run(
+      `INSERT INTO rules (pattern, match_type, reply, reply_type, media_url, filename, lang, active, priority, only_in_business_hours, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [pattern, match_type, reply, reply_type, media_url, filename, lang, active ? 1 : 0, priority, only_in_business_hours ? 1 : 0, now, now]
+    );
+    await db.close();
+    return { success: true, id: res.lastID };
+  } catch (error) {
+    await db.close();
+    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return { success: false, error: 'القاعدة موجودة مسبقاً (نفس النمط ونوع المطابقة)' };
+    }
+    throw error;
+  }
 }
 export async function updateRule(id, patch) {
   const db = await getDB();

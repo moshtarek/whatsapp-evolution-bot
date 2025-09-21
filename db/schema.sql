@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS rules (
   priority INTEGER DEFAULT 100,       -- smaller = higher priority
   only_in_business_hours INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now'))
+  updated_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(pattern, match_type)         -- منع تكرار نفس النمط ونوع المطابقة
 );
 
 CREATE TABLE IF NOT EXISTS authorized_numbers (
