@@ -42,8 +42,8 @@ export async function updateRule(id, patch) {
   const updated = { ...existing, ...patch };
   const now = dayjs().toISOString();
   await db.run(
-    `UPDATE rules SET pattern=?, match_type=?, reply=?, lang=?, active=?, priority=?, only_in_business_hours=?, updated_at=? WHERE id=?`,
-    [updated.pattern, updated.match_type, updated.reply, updated.lang, updated.active ? 1 : 0, updated.priority, updated.only_in_business_hours ? 1 : 0, now, id]
+    `UPDATE rules SET pattern=?, match_type=?, reply=?, reply_type=?, media_url=?, filename=?, lang=?, active=?, priority=?, only_in_business_hours=?, updated_at=? WHERE id=?`,
+    [updated.pattern, updated.match_type, updated.reply, updated.reply_type, updated.media_url, updated.filename, updated.lang, updated.active ? 1 : 0, updated.priority, updated.only_in_business_hours ? 1 : 0, now, id]
   );
   await db.close();
   return id;
