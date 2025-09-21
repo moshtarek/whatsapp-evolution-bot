@@ -29,13 +29,18 @@ function extractTargetNumber(text) {
 
 /** مطابقة قاعدة */
 function matchRule(input, rule) {
-  const msg = (input || '').trim();
+  let msg = (input || '').trim();
+  
+  // إزالة الرقم من النص للمطابقة
+  const cleanMsg = msg.replace(/\s+9665\d{8}\s*$/, '').trim();
+  
   switch (rule.match_type) {
-    case 'EXACT':       return msg === rule.pattern ? { ok: true } : { ok: false };
-    case 'STARTS_WITH': return msg.startsWith(rule.pattern) ? { ok: true, tail: msg.slice(rule.pattern.length) } : { ok: false };
-    case 'CONTAINS':    return msg.includes(rule.pattern) ? { ok: true } : { ok: false };
+    case 'EXACT':       return cleanMsg === rule.pattern ? { ok: true } : { ok: false };
+    case 'STARTS_WITH': return cleanMsg.startsWith(rule.pattern) ? { ok: true, tail: cleanMsg.slice(rule.pattern.length) } : { ok: false };
+    case 'CONTAINS':    return cleanMsg.includes(rule.pattern) ? { ok: true } : { ok: false };
     case 'REGEX': {
-      const re = new RegExp(rule.pattern, 'i'); const m = msg.match(re);
+      const re = new RegExp(rule.pattern, 'i'); 
+      const m = cleanMsg.match(re);
       return m ? { ok: true, groups: m.slice(1) } : { ok: false };
     }
     default: return { ok: false };
