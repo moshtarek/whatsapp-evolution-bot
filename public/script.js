@@ -633,9 +633,44 @@ function formatDate(dateString) {
     });
 }
 
-function showNotification(message, type = 'info') {
-    // Simple notification - you can enhance this
-    alert(message);
+function showNotification(message, type = 'success') {
+    const container = document.getElementById('notificationContainer');
+    
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    
+    const icon = type === 'success' ? '✅' : '❌';
+    
+    notification.innerHTML = `
+        <div class="notification-content">
+            <div class="notification-icon">${icon}</div>
+            <div class="notification-text">${message}</div>
+            <button class="notification-close" onclick="hideNotification(this)">×</button>
+        </div>
+    `;
+    
+    container.appendChild(notification);
+    
+    // Show notification
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+    
+    // Auto hide after 3 seconds
+    setTimeout(() => {
+        hideNotification(notification.querySelector('.notification-close'));
+    }, 3000);
+}
+
+function hideNotification(closeBtn) {
+    const notification = closeBtn.closest('.notification');
+    notification.classList.remove('show');
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 300);
 }
 
 // Close modals when clicking outside
