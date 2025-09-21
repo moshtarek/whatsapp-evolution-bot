@@ -438,6 +438,18 @@ function fillRuleForm(rule) {
     document.getElementById('priority').value = rule.priority;
     document.getElementById('active').checked = rule.active === 1;
     document.getElementById('businessHours').checked = rule.only_in_business_hours === 1;
+    
+    // Show uploaded image info if exists
+    const uploadedInfo = document.getElementById('uploadedInfo');
+    const uploadedFilename = document.getElementById('uploadedFilename');
+    
+    if (rule.media_url && rule.reply_type === 'image') {
+        uploadedInfo.style.display = 'block';
+        uploadedFilename.textContent = `اسم الملف: ${rule.filename || 'غير محدد'}`;
+    } else {
+        uploadedInfo.style.display = 'none';
+    }
+    
     toggleMediaFields();
 }
 
@@ -451,7 +463,16 @@ function fillNumberForm(number) {
 function toggleMediaFields() {
     const replyType = document.getElementById('replyType').value;
     const mediaFields = document.getElementById('mediaFields');
+    const uploadedInfo = document.getElementById('uploadedInfo');
+    
     mediaFields.style.display = (replyType === 'image' || replyType === 'document') ? 'block' : 'none';
+    
+    // Clear upload info when switching away from image/document
+    if (replyType === 'text') {
+        uploadedInfo.style.display = 'none';
+        document.getElementById('mediaUrl').value = '';
+        document.getElementById('filename').value = '';
+    }
     
     // Initialize upload area if showing media fields
     if (replyType === 'image' || replyType === 'document') {
