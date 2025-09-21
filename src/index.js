@@ -5,7 +5,9 @@ import { fileURLToPath } from 'url';
 import { config } from './config.js';
 import {
   onIncoming, health,
-  listRulesHandler, getRuleHandler, createRuleHandler, updateRuleHandler, deleteRuleHandler
+  listRulesHandler, getRuleHandler, createRuleHandler, updateRuleHandler, deleteRuleHandler,
+  listAuthorizedNumbersHandler, getAuthorizedNumberHandler, createAuthorizedNumberHandler, 
+  updateAuthorizedNumberHandler, deleteAuthorizedNumberHandler
 } from './routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -44,6 +46,13 @@ app.get('/rules/:id', getRuleHandler);
 app.post('/rules', createRuleHandler);
 app.put('/rules/:id', updateRuleHandler);
 app.delete('/rules/:id', deleteRuleHandler);
+
+// CRUD للأرقام المصرحة
+app.get('/authorized-numbers', listAuthorizedNumbersHandler);
+app.get('/authorized-numbers/:id', getAuthorizedNumberHandler);
+app.post('/authorized-numbers', createAuthorizedNumberHandler);
+app.put('/authorized-numbers/:id', updateAuthorizedNumberHandler);
+app.delete('/authorized-numbers/:id', deleteAuthorizedNumberHandler);
 
 app.listen(config.server.port, config.server.host, () => {
   const host = config.server.host === '0.0.0.0' ? 'all networks' : config.server.host;

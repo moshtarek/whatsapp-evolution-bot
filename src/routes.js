@@ -2,6 +2,10 @@ import dayjs from 'dayjs';
 import { sendText, sendImage, sendDocument } from './services/evolution.js';
 import { logger } from './utils/logger.js';
 import { isBusinessOpen, listRules, createRule, updateRule, deleteRule, getRule } from './models/rules.js';
+import { 
+  listAuthorizedNumbers, getAuthorizedNumber, createAuthorizedNumber, 
+  updateAuthorizedNumber, deleteAuthorizedNumber, isAuthorizedNumber
+} from './db.js';
 
 /** استخراج الرقم والنص من Payload Evolution (يدعم data{} وبدونه) */
 function parseIncoming(body) {
@@ -89,6 +93,13 @@ export async function onIncoming(req, res) {
 
     const { number, text, fromMe } = parseIncoming(payload);
     logger.info('Incoming:', { number, text });
+
+    // فحص التصريح
+    const authorized = await isAuthorizedNumber(number);
+    if (!authorized) {
+      logger.info('Unauthorized number:', number);
+      return res.status(200).json({ ok: false, reason: 'unauthorized number' });
+    }
 
     const expected = process.env.WEBHOOK_SECRET;
     if (expected && req.headers['x-webhook-secret'] !== expected) {
@@ -188,4 +199,69 @@ export async function deleteRuleHandler(req, res) {
   const id = Number(req.params.id);
   await deleteRule(id);
   res.json({ ok: true });
+}
+
+// Authorized Numbers handlers
+export async function listAuthorizedNumbersHandler(req, res) {
+  try {
+    const numbers = await listAuthorizedNumbers();
+    res.json(numbers);
+  } catch (err) {
+    logger.error('listAuthorizedNumbersHandler error:', err);
+    res.status(500).json({ error: err.message });
+  }
+}
+
+export async function getAuthorizedNumberHandler(req, res) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const number = await getAuthorizedNumber(id);
+    if (!number) return res.status(404).json({ error: 'Number not found' });
+    res.json(number);
+  } catch (err) {
+    logger.error('getAuthorizedNumberHandler error:', err);
+    res.status(500).json({ error: err.message });
+  }
+}
+
+export async function createAuthorizedNumberHandler(req, res) {
+  try {
+    const { phone_number, name, active } = req.body;
+    if (!phone_number) return res.status(400).json({ error: 'phone_number is required' });
+    
+    const cleanNumber = phone_number.replace(/[^0-9]/g, '');
+    const number = await createAuthorizedNumber({ phone_number: cleanNumber, name, active });
+    res.status(201).json(number);
+  } catch (err) {
+    logger.error('createAuthorizedNumberHandler error:', err);
+    res.status(500).json({ error: err.message });
+  }
+}
+
+export async function updateAuthorizedNumberHandler(req, res) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const updates = req.body;
+    if (updates.phone_number) {
+      updates.phone_number = updates.phone_number.replace(/[^0-9]/g, '');
+    }
+    const number = await updateAuthorizedNumber(id, updates);
+    if (!number) return res.status(404).json({ error: 'Number not found' });
+    res.json(number);
+  } catch (err) {
+    logger.error('updateAuthorizedNumberHandler error:', err);
+    res.status(500).json({ error: err.message });
+  }
+}
+
+export async function deleteAuthorizedNumberHandler(req, res) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const success = await deleteAuthorizedNumber(id);
+    if (!success) return res.status(404).json({ error: 'Number not found' });
+    res.json({ ok: true });
+  } catch (err) {
+    logger.error('deleteAuthorizedNumberHandler error:', err);
+    res.status(500).json({ error: err.message });
+  }
 }
