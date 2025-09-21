@@ -30,6 +30,9 @@ app.use(express.static(path.join(__dirname, '../public')));
 // خدمة الصور المرفوعة
 app.use('/images', express.static(path.join(__dirname, '../images')));
 
+// رفع الصور (قبل middleware العام)
+app.post('/upload-image', uploadMiddleware, uploadImageHandler);
+
 // JSON / x-www-form-urlencoded / نص خام
 app.use((req, res, next) => {
   const ct = (req.headers['content-type'] || '').toLowerCase();
@@ -65,9 +68,6 @@ app.get('/authorized-numbers/:id', getAuthorizedNumberHandler);
 app.post('/authorized-numbers', createAuthorizedNumberHandler);
 app.put('/authorized-numbers/:id', updateAuthorizedNumberHandler);
 app.delete('/authorized-numbers/:id', deleteAuthorizedNumberHandler);
-
-// رفع الصور
-app.post('/upload-image', uploadMiddleware, uploadImageHandler);
 
 app.listen(config.server.port, config.server.host, () => {
   const host = config.server.host === '0.0.0.0' ? 'all networks' : config.server.host;
