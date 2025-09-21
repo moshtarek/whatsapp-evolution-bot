@@ -11,6 +11,7 @@ services:
       - "3001:3001"
     volumes:
       - ./db:/app/db
+      - ./images:/app/images
     environment:
       - NODE_ENV=production
     healthcheck:
