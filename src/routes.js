@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import multer from 'multer';
+import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs';
 import { sendText, sendImage, sendDocument } from './services/evolution.js';
@@ -317,14 +318,29 @@ export async function uploadImageHandler(req, res) {
       return res.status(400).json({ error: 'No image file provided' });
     }
 
-    const filename = req.file.filename;
-    logger.info(`Image uploaded: ${filename}`);
+    const originalPath = req.file.path;
+    const ext = path.extname(req.file.filename);
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 8);
+    const processedFilename = `img_${timestamp}_${randomStr}${ext}`;
+    const processedPath = path.join('./images', processedFilename);
+
+    // Process image with sharp to fix orientation
+    await sharp(originalPath)
+      .rotate() // Auto-rotate based on EXIF orientation
+      .jpeg({ quality: 85 }) // Optimize quality
+      .toFile(processedPath);
+
+    // Remove original file
+    fs.unlinkSync(originalPath);
+
+    logger.info(`Image processed and uploaded: ${processedFilename}`);
     
     res.json({ 
       success: true, 
-      filename,
-      url: `http://bot.lan/images/${filename}`,
-      message: 'Image uploaded successfully'
+      filename: processedFilename,
+      url: `http://bot.lan/images/${processedFilename}`,
+      message: 'Image uploaded and processed successfully'
     });
   } catch (err) {
     logger.error('uploadImageHandler error:', err);
