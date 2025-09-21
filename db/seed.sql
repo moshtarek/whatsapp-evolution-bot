@@ -35,7 +35,7 @@ https://maps.google.com/?q=21.561153,39.776638', 'image', 'https://example.com/m
 خط الطول: 39.776638° شرقاً
 
 🗺️ عرض على الخريطة:
-https://maps.google.com/?q=21.561153,39.776638', 'image', 'http://192.168.0.77:3001/myhome.jpg', NULL, 'ar', 1, 3, 0),
+https://maps.google.com/?q=21.561153,39.776638', 'image', 'http://bot.lan/myhome.jpg', NULL, 'ar', 1, 3, 0),
 
 ('عنواني', 'EXACT', 'العنوان المختصر: *MWUB2974*
 
