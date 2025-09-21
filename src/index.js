@@ -33,9 +33,9 @@ app.use('/images', express.static(path.join(__dirname, '../images')));
 // JSON / x-www-form-urlencoded / نص خام
 app.use((req, res, next) => {
   const ct = (req.headers['content-type'] || '').toLowerCase();
-  if (ct.includes('application/json')) return express.json({ limit: '1mb' })(req, res, next);
-  if (ct.includes('application/x-www-form-urlencoded')) return express.urlencoded({ extended: true, limit: '1mb' })(req, res, next);
-  return express.text({ type: '*/*', limit: '1mb' })(req, res, next);
+  if (ct.includes('application/json')) return express.json({ limit: '10mb' })(req, res, next);
+  if (ct.includes('application/x-www-form-urlencoded')) return express.urlencoded({ extended: true, limit: '10mb' })(req, res, next);
+  return express.text({ type: '*/*', limit: '10mb' })(req, res, next);
 });
 
 app.use(morgan('tiny'));
