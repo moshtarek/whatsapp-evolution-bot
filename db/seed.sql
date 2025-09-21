@@ -23,13 +23,16 @@ INSERT OR IGNORE INTO rules (pattern, match_type, reply, reply_type, media_url, 
 
 🔍 يمكنك معرفة حالة الطقس من:
 
-🌐 موقع الطقس العالمي:
-https://weather.com/weather/today/l/$1
-
-📱 أو ابحث في Google عن:
+📱 بحث Google:
 https://www.google.com/search?q=طقس+$1
 
-☀️ للحصول على معلومات دقيقة ومحدثة عن درجة الحرارة والرطوبة والرياح', 'text', NULL, NULL, 'ar', 1, 10, 0),
+🌐 موقع AccuWeather:
+https://www.accuweather.com/ar/search-locations?query=$1
+
+🇸🇦 الأرصاد السعودية:
+https://ncm.gov.sa/Ar/Weather/Pages/Forecast.aspx
+
+☀️ للحصول على معلومات دقيقة ومحدثة عن درجة الحرارة والرطوبة والرياح', 'text', NULL, NULL, 'ar', 1, 6, 0),
 
 ('بيتي', 'EXACT', '🏠 منزلي:
 
