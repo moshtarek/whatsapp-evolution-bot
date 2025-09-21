@@ -570,6 +570,13 @@ async function uploadFile(file) {
         document.getElementById('mediaUrl').value = result.url;
         document.getElementById('filename').value = result.filename;
         
+        // Debug: log the uploaded values
+        console.log('Upload completed:', {
+            mediaUrl: result.url,
+            filename: result.filename,
+            replyType: document.getElementById('replyType').value
+        });
+        
         // Show upload success info
         uploadedFilename.textContent = `اسم الملف: ${result.filename}`;
         uploadedInfo.style.display = 'block';
@@ -608,6 +615,9 @@ async function saveRule() {
         active: document.getElementById('active').checked ? 1 : 0,
         only_in_business_hours: document.getElementById('businessHours').checked ? 1 : 0
     };
+
+    // Debug: log the data being sent
+    console.log('Saving rule data:', ruleData);
 
     try {
         const ruleId = document.getElementById('ruleId').value;
