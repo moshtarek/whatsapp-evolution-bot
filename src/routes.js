@@ -319,17 +319,22 @@ export async function uploadImageHandler(req, res) {
     }
 
     const originalPath = req.file.path;
-    const ext = path.extname(req.file.filename);
+    const ext = path.extname(req.file.originalname).toLowerCase();
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 8);
     const processedFilename = `img_${timestamp}_${randomStr}${ext}`;
     const processedPath = path.join('./images', processedFilename);
 
-    // Process image with sharp to fix orientation
-    await sharp(originalPath)
-      .rotate() // Auto-rotate based on EXIF orientation
-      .jpeg({ quality: 85 }) // Optimize quality
-      .toFile(processedPath);
+    // Process image with sharp to fix orientation, keep original format
+    const sharpInstance = sharp(originalPath).rotate();
+    
+    if (ext === '.jpg' || ext === '.jpeg') {
+      await sharpInstance.jpeg({ quality: 85 }).toFile(processedPath);
+    } else if (ext === '.png') {
+      await sharpInstance.png({ quality: 85 }).toFile(processedPath);
+    } else {
+      await sharpInstance.toFile(processedPath);
+    }
 
     // Remove original file
     fs.unlinkSync(originalPath);
