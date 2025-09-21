@@ -441,6 +441,69 @@
             font-family: inherit;
         }
         
+        
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f9fafb;
+        }
+        
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #6366f1;
+            background: #f0f9ff;
+        }
+        
+        .upload-content {
+            pointer-events: none;
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        
+        .upload-area p {
+            font-size: 1.1rem;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+        
+        .upload-area small {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+        
+        /* Progress Bar */
+        #uploadProgress {
+            margin-top: 15px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #10b981, #059669);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        #progressText {
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+        
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
@@ -792,10 +855,27 @@
                 </div>
 
                 <div id="mediaFields" style="display: none;">
+                    <div class="form-group">
+                        <label for="imageUpload">رفع صورة</label>
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-content">
+                                <div class="upload-icon">📁</div>
+                                <p>اسحب الصورة هنا أو انقر للاختيار</p>
+                                <small>PNG, JPG, GIF حتى 5MB</small>
+                            </div>
+                            <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                        </div>
+                        <div id="uploadProgress" style="display: none;">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <span id="progressText">0%</span>
+                        </div>
+                    </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="mediaUrl">رابط الملف/الصورة</label>
-                            <input type="url" id="mediaUrl">
+                            <input type="url" id="mediaUrl" readonly>
                         </div>
                         <div class="form-group">
                             <label for="filename">اسم الملف</label>

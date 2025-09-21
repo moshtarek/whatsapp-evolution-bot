@@ -1,4 +1,7 @@
 import dayjs from 'dayjs';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import { sendText, sendImage, sendDocument } from './services/evolution.js';
 import { logger } from './utils/logger.js';
 import { isBusinessOpen, listRules, createRule, updateRule, deleteRule, getRule } from './models/rules.js';
@@ -6,6 +9,37 @@ import {
   listAuthorizedNumbers, getAuthorizedNumber, createAuthorizedNumber, 
   updateAuthorizedNumber, deleteAuthorizedNumber, isAuthorizedNumber
 } from './db.js';
+
+// Configure multer for image uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = './images';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const name = path.basename(file.originalname, ext);
+    const timestamp = Date.now();
+    cb(null, `${name}_${timestamp}${ext}`);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
+
+export const uploadMiddleware = upload.single('image');
 
 /** استخراج الرقم والنص من Payload Evolution (يدعم data{} وبدونه) */
 function parseIncoming(body) {
@@ -271,6 +305,27 @@ export async function deleteAuthorizedNumberHandler(req, res) {
     res.json({ ok: true });
   } catch (err) {
     logger.error('deleteAuthorizedNumberHandler error:', err);
+    res.status(500).json({ error: err.message });
+  }
+}
+
+export async function uploadImageHandler(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+
+    const filename = req.file.filename;
+    logger.info(`Image uploaded: ${filename}`);
+    
+    res.json({ 
+      success: true, 
+      filename,
+      url: `http://bot.lan/images/${filename}`,
+      message: 'Image uploaded successfully'
+    });
+  } catch (err) {
+    logger.error('uploadImageHandler error:', err);
     res.status(500).json({ error: err.message });
   }
 }

@@ -7,7 +7,8 @@ import {
   onIncoming, health,
   listRulesHandler, getRuleHandler, createRuleHandler, updateRuleHandler, deleteRuleHandler,
   listAuthorizedNumbersHandler, getAuthorizedNumberHandler, createAuthorizedNumberHandler, 
-  updateAuthorizedNumberHandler, deleteAuthorizedNumberHandler
+  updateAuthorizedNumberHandler, deleteAuthorizedNumberHandler,
+  uploadImageHandler, uploadMiddleware
 } from './routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -17,6 +18,9 @@ const app = express();
 
 // خدمة الملفات الثابتة (الواجهة الويب)
 app.use(express.static(path.join(__dirname, '../public')));
+
+// خدمة الصور المرفوعة
+app.use('/images', express.static(path.join(__dirname, '../images')));
 
 // JSON / x-www-form-urlencoded / نص خام
 app.use((req, res, next) => {
@@ -53,6 +57,9 @@ app.get('/authorized-numbers/:id', getAuthorizedNumberHandler);
 app.post('/authorized-numbers', createAuthorizedNumberHandler);
 app.put('/authorized-numbers/:id', updateAuthorizedNumberHandler);
 app.delete('/authorized-numbers/:id', deleteAuthorizedNumberHandler);
+
+// رفع الصور
+app.post('/upload-image', uploadMiddleware, uploadImageHandler);
 
 app.listen(config.server.port, config.server.host, () => {
   const host = config.server.host === '0.0.0.0' ? 'all networks' : config.server.host;

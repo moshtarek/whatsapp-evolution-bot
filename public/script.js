@@ -452,6 +452,118 @@ function toggleMediaFields() {
     const replyType = document.getElementById('replyType').value;
     const mediaFields = document.getElementById('mediaFields');
     mediaFields.style.display = (replyType === 'image' || replyType === 'document') ? 'block' : 'none';
+    
+    // Initialize upload area if showing media fields
+    if (replyType === 'image' || replyType === 'document') {
+        initializeUploadArea();
+    }
+}
+
+// Initialize upload area
+function initializeUploadArea() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('imageUpload');
+    
+    if (!uploadArea || !fileInput) return;
+    
+    // Click to select file
+    uploadArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    // File selection
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            uploadFile(e.target.files[0]);
+        }
+    });
+    
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            uploadFile(files[0]);
+        }
+    });
+}
+
+// Upload file function
+async function uploadFile(file) {
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+        showNotification('يرجى اختيار ملف صورة صالح', 'error');
+        return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) { // 5MB
+        showNotification('حجم الملف كبير جداً (الحد الأقصى 5MB)', 'error');
+        return;
+    }
+    
+    // Show progress
+    const progressDiv = document.getElementById('uploadProgress');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    
+    progressDiv.style.display = 'block';
+    progressFill.style.width = '0%';
+    progressText.textContent = '0%';
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    try {
+        const response = await fetch('/upload-image', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error('فشل في رفع الصورة');
+        }
+        
+        const result = await response.json();
+        
+        // Update progress to 100%
+        progressFill.style.width = '100%';
+        progressText.textContent = '100%';
+        
+        // Update media URL field
+        const mediaUrlField = document.getElementById('mediaUrl');
+        mediaUrlField.value = `http://bot.lan/images/${result.filename}`;
+        
+        // Update filename field if empty
+        const filenameField = document.getElementById('filename');
+        if (!filenameField.value) {
+            filenameField.value = result.filename;
+        }
+        
+        showNotification('تم رفع الصورة بنجاح!', 'success');
+        
+        // Hide progress after delay
+        setTimeout(() => {
+            progressDiv.style.display = 'none';
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Upload error:', error);
+        showNotification('فشل في رفع الصورة: ' + error.message, 'error');
+        progressDiv.style.display = 'none';
+    }
 }
 
 // Save functions
