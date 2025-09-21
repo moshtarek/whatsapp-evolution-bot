@@ -121,6 +121,7 @@ export async function onIncoming(req, res) {
         
         // تحديد الرقم المستهدف (إما المرسل أو رقم محدد)
         const targetNumber = extractTargetNumber(text) || number;
+        const isTargetedMessage = targetNumber !== number;
         
         // إرسال حسب نوع الرد
         if (r.reply_type === 'image' && r.media_url) {
@@ -129,6 +130,12 @@ export async function onIncoming(req, res) {
           await sendDocument({ number: targetNumber, documentUrl: r.media_url, filename: r.filename, caption: reply });
         } else {
           await sendText({ number: targetNumber, text: reply });
+        }
+        
+        // إرسال رسالة تأكيد للمرسل إذا تم الإرسال لرقم آخر
+        if (isTargetedMessage) {
+          const confirmMsg = `✅ تم إرسال الرسالة للرقم: ${targetNumber}`;
+          await sendText({ number, text: confirmMsg });
         }
         
         return res.status(200).json({ ok: true, rule_id: r.id, target_number: targetNumber });
