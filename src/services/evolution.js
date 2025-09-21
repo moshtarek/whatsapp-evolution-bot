@@ -82,21 +82,22 @@ export async function sendImage({ number, imageUrl, caption = '' }) {
 
   const candidates = [
     { tag: 'sendMedia', payload: { number: n, mediatype: 'image', media: imageUrl, caption } },
-    { tag: 'sendImage', payload: { number: n, image: imageUrl, caption } },
     { tag: 'sendMedia_jid', payload: { remoteJid: nJid, mediatype: 'image', media: imageUrl, caption } },
+    { tag: 'sendText_with_image', payload: { number: n, text: `${caption}\n\n🖼️ ${imageUrl}` } },
   ];
 
   let lastErr = null;
   for (const c of candidates) {
     try {
-      const res = await postSendMedia(c.payload, c.tag === 'sendImage' ? 'sendImage' : 'sendMedia');
+      const endpoint = c.tag.includes('sendText') ? 'sendText' : 'sendMedia';
+      const res = await postSendMedia(c.payload, endpoint);
       logger.info(`Sent image (${c.tag}) ->`, JSON.stringify(c.payload));
       return res.data;
     } catch (err) {
       const status = err.response?.status;
       logger.error(`sendImage (${c.tag}) error:`, status, err.response?.data || err.message);
       lastErr = err;
-      if (status && ![400, 422].includes(status)) break;
+      if (status && ![400, 422, 404].includes(status)) break;
     }
   }
   throw lastErr || new Error('All image payload variants failed');
