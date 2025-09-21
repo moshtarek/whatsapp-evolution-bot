@@ -62,22 +62,27 @@ async function migrate() {
 }
 
 export async function listAuthorizedNumbers() {
-  const stmt = db.prepare('SELECT * FROM authorized_numbers ORDER BY created_at DESC');
-  return stmt.all();
+  const database = await getDB();
+  const result = await database.all('SELECT * FROM authorized_numbers ORDER BY created_at DESC');
+  await database.close();
+  return result;
 }
 
 export async function getAuthorizedNumber(id) {
-  const stmt = db.prepare('SELECT * FROM authorized_numbers WHERE id = ?');
-  return stmt.get(id);
+  const database = await getDB();
+  const result = await database.get('SELECT * FROM authorized_numbers WHERE id = ?', id);
+  await database.close();
+  return result;
 }
 
 export async function createAuthorizedNumber({ phone_number, name, active = 1 }) {
-  const stmt = db.prepare(`
+  const database = await getDB();
+  const result = await database.run(`
     INSERT INTO authorized_numbers (phone_number, name, active, updated_at)
     VALUES (?, ?, ?, datetime('now'))
-  `);
-  const result = stmt.run(phone_number, name, active);
-  return { id: result.lastInsertRowid, phone_number, name, active };
+  `, phone_number, name, active);
+  await database.close();
+  return { id: result.lastID, phone_number, name, active };
 }
 
 export async function updateAuthorizedNumber(id, updates) {
@@ -93,29 +98,35 @@ export async function updateAuthorizedNumber(id, updates) {
   fields.push("updated_at = datetime('now')");
   values.push(id);
   
-  const stmt = db.prepare(`UPDATE authorized_numbers SET ${fields.join(', ')} WHERE id = ?`);
-  const result = stmt.run(...values);
-  return result.changes > 0 ? getAuthorizedNumber(id) : null;
+  const database = await getDB();
+  const result = await database.run(`UPDATE authorized_numbers SET ${fields.join(', ')} WHERE id = ?`, ...values);
+  const updated = result.changes > 0 ? await database.get('SELECT * FROM authorized_numbers WHERE id = ?', id) : null;
+  await database.close();
+  return updated;
 }
 
 export async function deleteAuthorizedNumber(id) {
-  const stmt = db.prepare('DELETE FROM authorized_numbers WHERE id = ?');
-  const result = stmt.run(id);
+  const database = await getDB();
+  const result = await database.run('DELETE FROM authorized_numbers WHERE id = ?', id);
+  await database.close();
   return result.changes > 0;
 }
 
 export async function isAuthorizedNumber(phoneNumber) {
   const cleanNumber = phoneNumber.replace(/[^0-9]/g, '');
-  const stmt = db.prepare('SELECT COUNT(*) as count FROM authorized_numbers WHERE phone_number = ? AND active = 1');
-  const result = stmt.get(cleanNumber);
+  const database = await getDB();
+  const result = await database.get('SELECT COUNT(*) as count FROM authorized_numbers WHERE phone_number = ? AND active = 1', cleanNumber);
+  await database.close();
   return result.count > 0;
 }
 
 async function migrateAuthorizedNumbers() {
   logger.info('Running authorized numbers migration...');
   try {
+    const database = await getDB();
     const migrationSQL = fs.readFileSync('./db/migration_authorized_numbers.sql', 'utf8');
-    db.exec(migrationSQL);
+    database.exec(migrationSQL);
+    await database.close();
     logger.info('Authorized numbers migration completed successfully');
   } catch (err) {
     logger.error('Migration error:', err.message);

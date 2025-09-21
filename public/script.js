@@ -1,69 +1,339 @@
 // Global variables
 let currentEditingRule = null;
 let currentEditingNumber = null;
+let allRules = [];
+let allNumbers = [];
+let deleteCallback = null;
+
+// Pagination variables
+let currentRulesPage = 1;
+let currentNumbersPage = 1;
+let itemsPerPage = 9; // 3x3 grid
+let filteredRules = [];
+let filteredNumbers = [];
 
 // Load data when page loads
 document.addEventListener('DOMContentLoaded', function() {
     loadRules();
     loadNumbers();
-    
-    // Tab change event
-    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
-        tab.addEventListener('shown.bs.tab', function(e) {
-            if (e.target.id === 'numbers-tab') {
-                loadNumbers();
-            } else if (e.target.id === 'rules-tab') {
-                loadRules();
-            }
-        });
-    });
 });
+
+// Tab switching
+function switchTab(tab) {
+    // Update tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    document.getElementById(tab + '-tab').classList.add('active');
+}
 
 // Rules functions
 async function loadRules() {
     try {
         const response = await fetch('/rules');
-        const rules = await response.json();
-        displayRules(rules);
+        allRules = await response.json();
+        currentRulesPage = 1;
+        displayRules(allRules);
     } catch (error) {
         console.error('Error loading rules:', error);
-        alert('خطأ في تحميل القواعد');
+        showNotification('خطأ في تحميل القواعد', 'error');
     }
 }
 
 function displayRules(rules) {
-    const tbody = document.getElementById('rulesTable');
-    tbody.innerHTML = '';
+    filteredRules = rules;
+    const totalPages = Math.ceil(rules.length / itemsPerPage);
+    const startIndex = (currentRulesPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentPageRules = rules.slice(startIndex, endIndex);
     
-    rules.forEach(rule => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${rule.id}</td>
-            <td><code>${rule.pattern}</code></td>
-            <td><span class="badge bg-info">${getMatchTypeText(rule.match_type)}</span></td>
-            <td>${truncateText(rule.reply, 50)}</td>
-            <td>${getReplyTypeIcon(rule.reply_type)}</td>
-            <td><span class="badge bg-secondary">${rule.priority}</span></td>
-            <td>${rule.active ? '<span class="badge bg-success">نشط</span>' : '<span class="badge bg-danger">غير نشط</span>'}</td>
-            <td>
-                <div class="btn-group" role="group">
-                    <button class="btn btn-sm btn-outline-primary" onclick="editRule(${rule.id})" title="تعديل">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteRule(${rule.id})" title="حذف">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </td>
+    const container = document.getElementById('rulesContainer');
+    container.innerHTML = '';
+    
+    currentPageRules.forEach(rule => {
+        const card = document.createElement('div');
+        card.className = 'rule-card';
+        
+        card.innerHTML = `
+            <div class="card-header">
+                <div class="card-id">#${rule.id}</div>
+                <div class="card-title">${rule.pattern}</div>
+            </div>
+            
+            <div class="card-content">
+                <div class="card-pattern">${rule.pattern}</div>
+                <div class="card-reply">${rule.reply}</div>
+                ${rule.media_url ? `<div class="card-media-link">🔗 ${truncateText(rule.media_url, 35)}</div>` : ''}
+            </div>
+            
+            <div class="card-badges">
+                <span class="badge match-type">${getMatchTypeText(rule.match_type)}</span>
+                <span class="badge priority">أولوية: ${rule.priority}</span>
+                <span class="badge ${rule.active ? 'active' : 'inactive'}">${rule.active ? 'نشط' : 'غير نشط'}</span>
+                ${rule.reply_type !== 'text' ? `<span class="badge reply-type">${getReplyTypeText(rule.reply_type)}</span>` : ''}
+                <span class="badge lang">any</span>
+            </div>
+            
+            <div class="card-actions">
+                <button class="btn btn-edit" onclick="editRule(${rule.id})">
+                    🔧 تعديل
+                </button>
+                <button class="btn btn-delete" onclick="confirmDeleteRule(${rule.id})">
+                    🗑️ حذف
+                </button>
+            </div>
         `;
-        tbody.appendChild(row);
+        
+        container.appendChild(card);
     });
+    
+    updateRulesPagination(totalPages);
 }
 
-function showRuleModal(rule = null) {
+function updateRulesPagination(totalPages) {
+    const pagination = document.getElementById('rulesPagination');
+    
+    if (totalPages <= 1) {
+        pagination.style.display = 'none';
+        return;
+    }
+    
+    pagination.style.display = 'flex';
+    pagination.innerHTML = '';
+    
+    // Previous button
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = '‹';
+    prevBtn.disabled = currentRulesPage === 1;
+    prevBtn.onclick = () => {
+        if (currentRulesPage > 1) {
+            currentRulesPage--;
+            displayRules(filteredRules);
+        }
+    };
+    pagination.appendChild(prevBtn);
+    
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentRulesPage - 1 && i <= currentRulesPage + 1)) {
+            const pageBtn = document.createElement('button');
+            pageBtn.textContent = i;
+            pageBtn.className = i === currentRulesPage ? 'active' : '';
+            pageBtn.onclick = () => {
+                currentRulesPage = i;
+                displayRules(filteredRules);
+            };
+            pagination.appendChild(pageBtn);
+        } else if (i === currentRulesPage - 2 || i === currentRulesPage + 2) {
+            const dots = document.createElement('span');
+            dots.textContent = '...';
+            dots.style.color = 'white';
+            dots.style.padding = '10px';
+            pagination.appendChild(dots);
+        }
+    }
+    
+    // Next button
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = '›';
+    nextBtn.disabled = currentRulesPage === totalPages;
+    nextBtn.onclick = () => {
+        if (currentRulesPage < totalPages) {
+            currentRulesPage++;
+            displayRules(filteredRules);
+        }
+    };
+    pagination.appendChild(nextBtn);
+    
+    // Page info
+    const pageInfo = document.createElement('div');
+    pageInfo.className = 'page-info';
+    pageInfo.textContent = `صفحة ${currentRulesPage} من ${totalPages} (${filteredRules.length} قاعدة)`;
+    pagination.appendChild(pageInfo);
+}
+
+function filterRules() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const typeFilter = document.getElementById('typeFilter').value;
+    
+    const filtered = allRules.filter(rule => {
+        const matchesSearch = rule.pattern.toLowerCase().includes(searchTerm) ||
+                            rule.reply.toLowerCase().includes(searchTerm) ||
+                            rule.match_type.toLowerCase().includes(searchTerm);
+        
+        const matchesStatus = statusFilter === '' || rule.active.toString() === statusFilter;
+        const matchesType = typeFilter === '' || rule.match_type === typeFilter;
+        
+        return matchesSearch && matchesStatus && matchesType;
+    });
+    
+    currentRulesPage = 1; // Reset to first page
+    displayRules(filtered);
+}
+
+// Numbers functions
+async function loadNumbers() {
+    try {
+        const response = await fetch('/authorized-numbers');
+        allNumbers = await response.json();
+        currentNumbersPage = 1;
+        displayNumbers(allNumbers);
+    } catch (error) {
+        console.error('Error loading numbers:', error);
+        showNotification('خطأ في تحميل الأرقام', 'error');
+    }
+}
+
+function displayNumbers(numbers) {
+    filteredNumbers = numbers;
+    const totalPages = Math.ceil(numbers.length / itemsPerPage);
+    const startIndex = (currentNumbersPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentPageNumbers = numbers.slice(startIndex, endIndex);
+    
+    const container = document.getElementById('numbersContainer');
+    container.innerHTML = '';
+    
+    currentPageNumbers.forEach(number => {
+        const card = document.createElement('div');
+        card.className = 'number-card';
+        
+        card.innerHTML = `
+            <div class="card-header">
+                <div class="card-id">#${number.id}</div>
+                <div class="card-title">${number.name || 'بدون اسم'}</div>
+            </div>
+            
+            <div class="card-content">
+                <div class="card-phone">${number.phone_number}</div>
+                <div class="card-date">📅 ${formatDate(number.created_at)}</div>
+            </div>
+            
+            <div class="card-badges">
+                <span class="badge ${number.active ? 'active' : 'inactive'}">${number.active ? 'نشط' : 'غير نشط'}</span>
+            </div>
+            
+            <div class="card-actions">
+                <button class="btn btn-edit" onclick="editNumber(${number.id})">
+                    🔧 تعديل
+                </button>
+                <button class="btn btn-delete" onclick="confirmDeleteNumber(${number.id})">
+                    🗑️ حذف
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(card);
+    });
+    
+    updateNumbersPagination(totalPages);
+}
+
+function updateNumbersPagination(totalPages) {
+    const pagination = document.getElementById('numbersPagination');
+    
+    if (totalPages <= 1) {
+        pagination.style.display = 'none';
+        return;
+    }
+    
+    pagination.style.display = 'flex';
+    pagination.innerHTML = '';
+    
+    // Previous button
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = '‹';
+    prevBtn.disabled = currentNumbersPage === 1;
+    prevBtn.onclick = () => {
+        if (currentNumbersPage > 1) {
+            currentNumbersPage--;
+            displayNumbers(filteredNumbers);
+        }
+    };
+    pagination.appendChild(prevBtn);
+    
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentNumbersPage - 1 && i <= currentNumbersPage + 1)) {
+            const pageBtn = document.createElement('button');
+            pageBtn.textContent = i;
+            pageBtn.className = i === currentNumbersPage ? 'active' : '';
+            pageBtn.onclick = () => {
+                currentNumbersPage = i;
+                displayNumbers(filteredNumbers);
+            };
+            pagination.appendChild(pageBtn);
+        } else if (i === currentNumbersPage - 2 || i === currentNumbersPage + 2) {
+            const dots = document.createElement('span');
+            dots.textContent = '...';
+            dots.style.color = 'white';
+            dots.style.padding = '10px';
+            pagination.appendChild(dots);
+        }
+    }
+    
+    // Next button
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = '›';
+    nextBtn.disabled = currentNumbersPage === totalPages;
+    nextBtn.onclick = () => {
+        if (currentNumbersPage < totalPages) {
+            currentNumbersPage++;
+            displayNumbers(filteredNumbers);
+        }
+    };
+    pagination.appendChild(nextBtn);
+    
+    // Page info
+    const pageInfo = document.createElement('div');
+    pageInfo.className = 'page-info';
+    pageInfo.textContent = `صفحة ${currentNumbersPage} من ${totalPages} (${filteredNumbers.length} رقم)`;
+    pagination.appendChild(pageInfo);
+}
+
+function filterNumbers() {
+    const searchTerm = document.getElementById('searchNumberInput').value.toLowerCase();
+    const statusFilter = document.getElementById('numberStatusFilter').value;
+    const sortFilter = document.getElementById('numberSortFilter').value;
+    
+    let filtered = allNumbers.filter(number => {
+        const matchesSearch = number.phone_number.includes(searchTerm) ||
+                            (number.name && number.name.toLowerCase().includes(searchTerm));
+        
+        const matchesStatus = statusFilter === '' || number.active.toString() === statusFilter;
+        
+        return matchesSearch && matchesStatus;
+    });
+    
+    // Sort numbers
+    switch (sortFilter) {
+        case 'newest':
+            filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            break;
+        case 'oldest':
+            filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            break;
+        case 'name':
+            filtered.sort((a, b) => {
+                const nameA = (a.name || '').toLowerCase();
+                const nameB = (b.name || '').toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+            break;
+    }
+    
+    currentNumbersPage = 1; // Reset to first page
+    displayNumbers(filtered);
+}
+
+// Modal functions
+function showModal(rule = null) {
     currentEditingRule = rule;
-    const modal = new bootstrap.Modal(document.getElementById('ruleModal'));
-    const title = document.getElementById('ruleModalTitle');
+    const modal = document.getElementById('modalOverlay');
+    const title = document.getElementById('modalTitle');
     
     if (rule) {
         title.textContent = 'تعديل القاعدة';
@@ -77,9 +347,63 @@ function showRuleModal(rule = null) {
         toggleMediaFields();
     }
     
-    modal.show();
+    modal.style.display = 'flex';
 }
 
+function hideModal() {
+    document.getElementById('modalOverlay').style.display = 'none';
+}
+
+function showNumberModal(number = null) {
+    currentEditingNumber = number;
+    const modal = document.getElementById('numberModalOverlay');
+    const title = document.getElementById('numberModalTitle');
+    
+    if (number) {
+        title.textContent = 'تعديل الرقم';
+        fillNumberForm(number);
+    } else {
+        title.textContent = 'إضافة رقم جديد';
+        document.getElementById('numberForm').reset();
+        document.getElementById('numberId').value = '';
+        document.getElementById('numberActive').checked = true;
+    }
+    
+    modal.style.display = 'flex';
+}
+
+function hideNumberModal() {
+    document.getElementById('numberModalOverlay').style.display = 'none';
+}
+
+// Custom confirm dialog
+function showConfirm(message, callback) {
+    document.getElementById('confirmMessage').textContent = message;
+    document.getElementById('confirmDialog').style.display = 'flex';
+    deleteCallback = callback;
+}
+
+function hideConfirm() {
+    document.getElementById('confirmDialog').style.display = 'none';
+    deleteCallback = null;
+}
+
+function confirmDelete() {
+    if (deleteCallback) {
+        deleteCallback();
+    }
+    hideConfirm();
+}
+
+function confirmDeleteRule(id) {
+    showConfirm('هل أنت متأكد من حذف هذه القاعدة؟', () => deleteRule(id));
+}
+
+function confirmDeleteNumber(id) {
+    showConfirm('هل أنت متأكد من حذف هذا الرقم؟', () => deleteNumber(id));
+}
+
+// Form functions
 function fillRuleForm(rule) {
     document.getElementById('ruleId').value = rule.id;
     document.getElementById('pattern').value = rule.pattern;
@@ -89,10 +413,16 @@ function fillRuleForm(rule) {
     document.getElementById('mediaUrl').value = rule.media_url || '';
     document.getElementById('filename').value = rule.filename || '';
     document.getElementById('priority').value = rule.priority;
-    document.getElementById('lang').value = rule.lang;
     document.getElementById('active').checked = rule.active === 1;
     document.getElementById('businessHours').checked = rule.only_in_business_hours === 1;
     toggleMediaFields();
+}
+
+function fillNumberForm(number) {
+    document.getElementById('numberId').value = number.id;
+    document.getElementById('phoneNumber').value = number.phone_number;
+    document.getElementById('numberName').value = number.name || '';
+    document.getElementById('numberActive').checked = number.active === 1;
 }
 
 function toggleMediaFields() {
@@ -101,6 +431,7 @@ function toggleMediaFields() {
     mediaFields.style.display = (replyType === 'image' || replyType === 'document') ? 'block' : 'none';
 }
 
+// Save functions
 async function saveRule() {
     const form = document.getElementById('ruleForm');
     if (!form.checkValidity()) {
@@ -116,7 +447,7 @@ async function saveRule() {
         media_url: document.getElementById('mediaUrl').value || null,
         filename: document.getElementById('filename').value || null,
         priority: parseInt(document.getElementById('priority').value),
-        lang: document.getElementById('lang').value,
+        lang: 'ar',
         active: document.getElementById('active').checked ? 1 : 0,
         only_in_business_hours: document.getElementById('businessHours').checked ? 1 : 0
     };
@@ -133,108 +464,16 @@ async function saveRule() {
         });
 
         if (response.ok) {
-            bootstrap.Modal.getInstance(document.getElementById('ruleModal')).hide();
+            hideModal();
             loadRules();
-            alert(ruleId ? 'تم تحديث القاعدة بنجاح' : 'تم إضافة القاعدة بنجاح');
+            showNotification(ruleId ? 'تم تحديث القاعدة بنجاح' : 'تم إضافة القاعدة بنجاح', 'success');
         } else {
             throw new Error('فشل في حفظ القاعدة');
         }
     } catch (error) {
         console.error('Error saving rule:', error);
-        alert('خطأ في حفظ القاعدة');
+        showNotification('خطأ في حفظ القاعدة', 'error');
     }
-}
-
-async function editRule(id) {
-    try {
-        const response = await fetch(`/rules/${id}`);
-        const rule = await response.json();
-        showRuleModal(rule);
-    } catch (error) {
-        console.error('Error loading rule:', error);
-        alert('خطأ في تحميل القاعدة');
-    }
-}
-
-async function deleteRule(id) {
-    if (!confirm('هل أنت متأكد من حذف هذه القاعدة؟')) return;
-
-    try {
-        const response = await fetch(`/rules/${id}`, { method: 'DELETE' });
-        if (response.ok) {
-            loadRules();
-            alert('تم حذف القاعدة بنجاح');
-        } else {
-            throw new Error('فشل في حذف القاعدة');
-        }
-    } catch (error) {
-        console.error('Error deleting rule:', error);
-        alert('خطأ في حذف القاعدة');
-    }
-}
-
-// Numbers functions
-async function loadNumbers() {
-    try {
-        const response = await fetch('/authorized-numbers');
-        const numbers = await response.json();
-        displayNumbers(numbers);
-    } catch (error) {
-        console.error('Error loading numbers:', error);
-        alert('خطأ في تحميل الأرقام');
-    }
-}
-
-function displayNumbers(numbers) {
-    const tbody = document.getElementById('numbersTable');
-    tbody.innerHTML = '';
-    
-    numbers.forEach(number => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${number.id}</td>
-            <td><code>${number.phone_number}</code></td>
-            <td>${number.name || '-'}</td>
-            <td>${number.active ? '<span class="badge bg-success">نشط</span>' : '<span class="badge bg-danger">غير نشط</span>'}</td>
-            <td>${formatDate(number.created_at)}</td>
-            <td>
-                <div class="btn-group" role="group">
-                    <button class="btn btn-sm btn-outline-primary" onclick="editNumber(${number.id})" title="تعديل">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteNumber(${number.id})" title="حذف">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-}
-
-function showNumberModal(number = null) {
-    currentEditingNumber = number;
-    const modal = new bootstrap.Modal(document.getElementById('numberModal'));
-    const title = document.getElementById('numberModalTitle');
-    
-    if (number) {
-        title.textContent = 'تعديل الرقم';
-        fillNumberForm(number);
-    } else {
-        title.textContent = 'إضافة رقم جديد';
-        document.getElementById('numberForm').reset();
-        document.getElementById('numberId').value = '';
-        document.getElementById('numberActive').checked = true;
-    }
-    
-    modal.show();
-}
-
-function fillNumberForm(number) {
-    document.getElementById('numberId').value = number.id;
-    document.getElementById('phoneNumber').value = number.phone_number;
-    document.getElementById('numberName').value = number.name || '';
-    document.getElementById('numberActive').checked = number.active === 1;
 }
 
 async function saveNumber() {
@@ -262,16 +501,28 @@ async function saveNumber() {
         });
 
         if (response.ok) {
-            bootstrap.Modal.getInstance(document.getElementById('numberModal')).hide();
+            hideNumberModal();
             loadNumbers();
-            alert(numberId ? 'تم تحديث الرقم بنجاح' : 'تم إضافة الرقم بنجاح');
+            showNotification(numberId ? 'تم تحديث الرقم بنجاح' : 'تم إضافة الرقم بنجاح', 'success');
         } else {
             const error = await response.json();
             throw new Error(error.error || 'فشل في حفظ الرقم');
         }
     } catch (error) {
         console.error('Error saving number:', error);
-        alert('خطأ في حفظ الرقم: ' + error.message);
+        showNotification('خطأ في حفظ الرقم: ' + error.message, 'error');
+    }
+}
+
+// Edit functions
+async function editRule(id) {
+    try {
+        const response = await fetch(`/rules/${id}`);
+        const rule = await response.json();
+        showModal(rule);
+    } catch (error) {
+        console.error('Error loading rule:', error);
+        showNotification('خطأ في تحميل القاعدة', 'error');
     }
 }
 
@@ -282,24 +533,38 @@ async function editNumber(id) {
         showNumberModal(number);
     } catch (error) {
         console.error('Error loading number:', error);
-        alert('خطأ في تحميل الرقم');
+        showNotification('خطأ في تحميل الرقم', 'error');
+    }
+}
+
+// Delete functions
+async function deleteRule(id) {
+    try {
+        const response = await fetch(`/rules/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+            loadRules();
+            showNotification('تم حذف القاعدة بنجاح', 'success');
+        } else {
+            throw new Error('فشل في حذف القاعدة');
+        }
+    } catch (error) {
+        console.error('Error deleting rule:', error);
+        showNotification('خطأ في حذف القاعدة', 'error');
     }
 }
 
 async function deleteNumber(id) {
-    if (!confirm('هل أنت متأكد من حذف هذا الرقم؟')) return;
-
     try {
         const response = await fetch(`/authorized-numbers/${id}`, { method: 'DELETE' });
         if (response.ok) {
             loadNumbers();
-            alert('تم حذف الرقم بنجاح');
+            showNotification('تم حذف الرقم بنجاح', 'success');
         } else {
             throw new Error('فشل في حذف الرقم');
         }
     } catch (error) {
         console.error('Error deleting number:', error);
-        alert('خطأ في حذف الرقم');
+        showNotification('خطأ في حذف الرقم', 'error');
     }
 }
 
@@ -316,11 +581,20 @@ function getMatchTypeText(type) {
 
 function getReplyTypeIcon(type) {
     const icons = {
-        'text': '<i class="fas fa-comment text-primary"></i> نص',
-        'image': '<i class="fas fa-image text-success"></i> صورة',
-        'document': '<i class="fas fa-file text-warning"></i> ملف'
+        'text': '💬',
+        'image': '🖼️',
+        'document': '📄'
     };
     return icons[type] || icons['text'];
+}
+
+function getReplyTypeText(type) {
+    const types = {
+        'text': 'نص',
+        'image': 'صورة',
+        'document': 'ملف'
+    };
+    return types[type] || types['text'];
 }
 
 function truncateText(text, maxLength) {
@@ -335,3 +609,21 @@ function formatDate(dateString) {
         minute: '2-digit' 
     });
 }
+
+function showNotification(message, type = 'info') {
+    // Simple notification - you can enhance this
+    alert(message);
+}
+
+// Close modals when clicking outside
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) hideModal();
+});
+
+document.getElementById('numberModalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) hideNumberModal();
+});
+
+document.getElementById('confirmDialog').addEventListener('click', function(e) {
+    if (e.target === this) hideConfirm();
+});
