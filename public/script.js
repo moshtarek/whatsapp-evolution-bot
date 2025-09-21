@@ -16,6 +16,29 @@ let filteredNumbers = [];
 document.addEventListener('DOMContentLoaded', function() {
     loadRules();
     loadNumbers();
+    
+    // Prevent zoom on mobile
+    document.addEventListener('gesturestart', function (e) {
+        e.preventDefault();
+    });
+    
+    document.addEventListener('gesturechange', function (e) {
+        e.preventDefault();
+    });
+    
+    document.addEventListener('gestureend', function (e) {
+        e.preventDefault();
+    });
+    
+    // Prevent double-tap zoom
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
 });
 
 // Tab switching
