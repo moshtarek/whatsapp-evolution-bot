@@ -82,13 +82,15 @@ function displayRules(rules) {
         card.innerHTML = `
             <div class="card-header">
                 <div class="card-id">#${rule.id}</div>
-                <div class="card-title">${rule.pattern}</div>
+                <div class="card-title">
+                    ${getReplyTypeIcon(rule.reply_type)} ${rule.pattern}
+                </div>
             </div>
             
             <div class="card-content">
                 <div class="card-pattern">${rule.pattern}</div>
                 <div class="card-reply">${rule.reply}</div>
-                ${rule.media_url ? `<div class="card-media-link">🔗 ${truncateText(rule.media_url, 35)}</div>` : ''}
+                ${rule.media_url ? `<div class="card-media-info">📎 ملف مرفق</div>` : ''}
             </div>
             
             <div class="card-badges">
@@ -753,6 +755,15 @@ function getReplyTypeIcon(type) {
         'document': '📄'
     };
     return icons[type] || icons['text'];
+}
+
+function getReplyTypeIcon(replyType) {
+    switch(replyType) {
+        case 'image': return '🖼️';
+        case 'document': return '📄';
+        case 'text':
+        default: return '💬';
+    }
 }
 
 function getReplyTypeText(type) {
