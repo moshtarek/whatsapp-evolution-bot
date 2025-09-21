@@ -517,8 +517,11 @@ async function uploadFile(file) {
     const progressDiv = document.getElementById('uploadProgress');
     const progressFill = document.getElementById('progressFill');
     const progressText = document.getElementById('progressText');
+    const uploadedInfo = document.getElementById('uploadedInfo');
+    const uploadedFilename = document.getElementById('uploadedFilename');
     
     progressDiv.style.display = 'block';
+    uploadedInfo.style.display = 'none';
     progressFill.style.width = '0%';
     progressText.textContent = '0%';
     
@@ -542,15 +545,13 @@ async function uploadFile(file) {
         progressFill.style.width = '100%';
         progressText.textContent = '100%';
         
-        // Update media URL field
-        const mediaUrlField = document.getElementById('mediaUrl');
-        mediaUrlField.value = `http://bot.lan/images/${result.filename}`;
+        // Update hidden fields
+        document.getElementById('mediaUrl').value = result.url;
+        document.getElementById('filename').value = result.filename;
         
-        // Update filename field if empty
-        const filenameField = document.getElementById('filename');
-        if (!filenameField.value) {
-            filenameField.value = result.filename;
-        }
+        // Show upload success info
+        uploadedFilename.textContent = `اسم الملف: ${result.filename}`;
+        uploadedInfo.style.display = 'block';
         
         showNotification('تم رفع الصورة بنجاح!', 'success');
         

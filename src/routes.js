@@ -16,14 +16,16 @@ const storage = multer.diskStorage({
     const uploadDir = './images';
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
+      logger.info('Created images directory');
     }
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
-    const name = path.basename(file.originalname, ext);
     const timestamp = Date.now();
-    cb(null, `${name}_${timestamp}${ext}`);
+    const randomStr = Math.random().toString(36).substring(2, 8);
+    const uniqueName = `img_${timestamp}_${randomStr}${ext}`;
+    cb(null, uniqueName);
   }
 });
 

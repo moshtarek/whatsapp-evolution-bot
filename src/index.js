@@ -1,6 +1,7 @@
 import express from 'express';
 import morgan from 'morgan';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { config } from './config.js';
 import {
@@ -15,6 +16,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// إنشاء مجلد images إذا لم يكن موجوداً
+const imagesDir = path.join(__dirname, '../images');
+if (!fs.existsSync(imagesDir)) {
+  fs.mkdirSync(imagesDir, { recursive: true });
+  console.log('✅ Created images directory');
+}
 
 // خدمة الملفات الثابتة (الواجهة الويب)
 app.use(express.static(path.join(__dirname, '../public')));

@@ -871,17 +871,14 @@
                             </div>
                             <span id="progressText">0%</span>
                         </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="mediaUrl">رابط الملف/الصورة</label>
-                            <input type="url" id="mediaUrl" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label for="filename">اسم الملف</label>
-                            <input type="text" id="filename">
+                        <div id="uploadedInfo" style="display: none; margin-top: 15px; padding: 10px; background: #f0f9ff; border-radius: 8px; border: 1px solid #0ea5e9;">
+                            <p style="margin: 0; color: #0369a1; font-weight: 500;">✅ تم رفع الصورة بنجاح</p>
+                            <small id="uploadedFilename" style="color: #0369a1;"></small>
                         </div>
                     </div>
+                    <!-- Hidden fields for storing the uploaded file info -->
+                    <input type="hidden" id="mediaUrl">
+                    <input type="hidden" id="filename">
                 </div>
 
                 <div class="checkbox-group">
