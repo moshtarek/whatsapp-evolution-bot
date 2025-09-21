@@ -9,7 +9,6 @@ INSERT OR IGNORE INTO rules (pattern, match_type, reply, reply_type, media_url, 
 - hotmail أو outlook (للوصول لموقع Outlook)
 - سجلات (لعرض جميع السجلات)
 - بيتي (صورة المنزل مع الإحداثيات)
-- منزلي (صورة المنزل مع الإحداثيات)
 - إرسال <رقم> <رسالة>
 
 (الردود من قاعدة البيانات 👀)', 'text', NULL, NULL, 'any', 1, 1, 0),
@@ -32,16 +31,6 @@ https://www.google.com/search?q=طقس+$1
 
 ☀️ للحصول على معلومات دقيقة ومحدثة عن درجة الحرارة والرطوبة والرياح', 'text', NULL, NULL, 'ar', 1, 10, 0),
 
-('منزلي', 'EXACT', '🏠 منزلي
-
-📍 الإحداثيات:
-24.5481534, 46.5283512
-
-🗺️ الموقع على الخريطة:
-https://maps.google.com/?q=24.5481534,46.5283512
-
-🏡 مرحباً بك في منزلي!', 'image', 'osama.jpg', NULL, 'ar', 1, 3, 0),
-
 ('بيتي', 'EXACT', '🏠 منزلي:
 
 📍 الإحداثيات:
@@ -49,9 +38,7 @@ https://maps.google.com/?q=24.5481534,46.5283512
 خط الطول: 39.776638° شرقاً
 
 🗺️ عرض على الخريطة:
-https://maps.google.com/?q=21.561153,39.776638
-
-🏡 مرحباً بك!', 'text', NULL, NULL, 'ar', 1, 3, 0),
+https://maps.google.com/?q=21.561153,39.776638', 'image', 'https://example.com/myhome.jpg', NULL, 'ar', 1, 3, 0),
 
 ('سجلات', 'EXACT', '📋 جميع السجلات:
 
