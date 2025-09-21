@@ -1,6 +1,6 @@
 {
   "name": "whatsapp-evolution-bot",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "description": "WhatsApp bot over Evolution API (Node.js + Express + SQLite rules engine) — clean, DB-only",
   "main": "src/index.js",
   "type": "module",

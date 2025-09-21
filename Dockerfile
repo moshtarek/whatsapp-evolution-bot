@@ -20,6 +20,7 @@ COPY images/ ./images/
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 && \
+    mkdir -p /app/images && \
     chown -R nodejs:nodejs /app
 
 USER nodejs
