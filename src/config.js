@@ -12,6 +12,9 @@ export const config = {
     instance: env('EVOLUTION_INSTANCE'),
     apiKey: env('EVOLUTION_API_KEY'),
   },
+  openai: {
+    apiKey: env('OPENAI_API_KEY', ''),
+  },
   server: {
     host: env('HOST', '0.0.0.0'),
     port: env('BOT_PORT', 3001, Number),

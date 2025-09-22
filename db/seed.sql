@@ -19,6 +19,7 @@ INSERT OR IGNORE INTO rules (pattern, match_type, reply, reply_type, media_url, 
 ('gmail', 'EXACT', '📧 Gmail: https://gmail.com', 'text', NULL, NULL, 'any', 1, 10, 0),
 ('hotmail', 'EXACT', '📧 Outlook: https://outlook.com', 'text', NULL, NULL, 'any', 1, 10, 0),
 ('outlook', 'EXACT', '📧 Outlook: https://outlook.com', 'text', NULL, NULL, 'any', 1, 10, 0),
+('^ذكي\\s+(.+)$', 'REGEX', '🤖 جاري التفكير...', 'text', NULL, NULL, 'ar', 1, 1, 0),
 ('^طقس\\s+(.+)$', 'REGEX', '🌤️ طقس $1:
 
 🔍 يمكنك معرفة حالة الطقس من:
