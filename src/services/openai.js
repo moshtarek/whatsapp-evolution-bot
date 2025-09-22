@@ -1,18 +1,19 @@
 import OpenAI from 'openai';
 import { config } from '../config.js';
 
-const openai = new OpenAI({
+const client = new OpenAI({
   apiKey: config.openai.apiKey,
+  baseURL: 'https://api.groq.com/openai/v1',
 });
 
 export async function generateAIResponse(prompt) {
   try {
     if (!config.openai.apiKey) {
-      return 'عذراً، خدمة الذكاء الاصطناعي غير مفعلة. يرجى إضافة OPENAI_API_KEY.';
+      return 'عذراً، خدمة الذكاء الاصطناعي غير مفعلة. يرجى إضافة GROQ_API_KEY.';
     }
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+    const completion = await client.chat.completions.create({
+      model: "llama-3.1-70b-versatile",
       messages: [
         {
           role: "system",
@@ -29,7 +30,7 @@ export async function generateAIResponse(prompt) {
 
     return completion.choices[0].message.content;
   } catch (error) {
-    console.error('OpenAI API Error:', error);
+    console.error('Groq API Error:', error);
     return 'عذراً، حدث خطأ في الذكاء الاصطناعي. يرجى المحاولة مرة أخرى.';
   }
 }
