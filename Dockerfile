@@ -16,15 +16,17 @@ COPY src/ ./src/
 COPY db/ ./db/
 COPY public/ ./public/
 COPY images/ ./images/
+COPY start.sh ./
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 && \
     mkdir -p /app/images && \
+    chmod +x /app/start.sh && \
     chown -R nodejs:nodejs /app
 
 USER nodejs
 
 EXPOSE 3001
 
-CMD ["npm", "start"]
+CMD ["./start.sh"]
