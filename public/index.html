@@ -994,25 +994,32 @@
                 </div>
 
                 <!-- الإعدادات المتقدمة -->
-                <div class="form-group">
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <input type="checkbox" id="showAdvanced" onchange="toggleAdvancedSettings()">
-                        <span>إعدادات متقدمة</span>
-                    </label>
-                </div>
+<div class="form-group">
+    <div style="text-align: right; direction: rtl;">
+        <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
+            <input type="checkbox" id="showAdvanced" onchange="toggleAdvancedSettings()" style="margin: 0;">
+            <span style="font-size: 14px; color: #333;">إعدادات متقدمة</span>
+        </label>
+    </div>
+</div>
 
                 <div id="advancedSettings" style="display: none; background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 15px 0;">
-                    <div class="form-group">
-                        <label for="aiMaxTokens">الحد الأقصى للـ Tokens:</label>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="aiMaxTokens" style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">الحد الأقصى للـ Tokens:</label>
                         <input type="number" id="aiMaxTokens" min="100" max="8000" value="1500" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px;">
-                        <small style="color: #666; font-size: 12px;">كلما زاد العدد، كانت الردود أطول (1500 = حوالي 4500 حرف عربي)</small>
+                        <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">كلما زاد العدد، كانت الردود أطول (1500 = حوالي 4500 حرف عربي)</small>
                     </div>
                     <div class="form-group">
-                        <label for="aiTemperature">درجة الإبداع (0 = منطقي، 1 = إبداعي):</label>
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            <input type="range" id="aiTemperature" min="0" max="1" step="0.1" value="0.7" oninput="updateTemperatureValue()" style="flex: 1;">
-                            <span id="temperatureValue" style="font-weight: bold; min-width: 30px;">0.7</span>
+                        <label for="aiTemperature" style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">درجة الإبداع (0 = منطقي، 1 = إبداعي):</label>
+                        <div style="display: flex; align-items: center; gap: 15px; background: white; padding: 15px; border-radius: 8px; border: 2px solid #ddd;">
+                            <span style="font-size: 14px; color: #666; min-width: 50px;">منطقي</span>
+                            <input type="range" id="aiTemperature" min="0" max="1" step="0.1" value="0.7" oninput="updateTemperatureValue()" style="flex: 1; height: 6px; background: linear-gradient(to right, #007bff, #28a745, #ffc107, #dc3545); border-radius: 3px; outline: none;">
+                            <span style="font-size: 14px; color: #666; min-width: 50px;">إبداعي</span>
+                            <div style="background: #007bff; color: white; padding: 5px 10px; border-radius: 15px; font-weight: bold; min-width: 40px; text-align: center;">
+                                <span id="temperatureValue">0.7</span>
+                            </div>
                         </div>
+                        <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">0.0 = ردود منطقية ومتسقة | 1.0 = ردود إبداعية ومتنوعة</small>
                     </div>
                 </div>
 
