@@ -466,11 +466,25 @@ function toggleMediaFields() {
     const replyType = document.getElementById('replyType').value;
     const mediaFields = document.getElementById('mediaFields');
     const uploadedInfo = document.getElementById('uploadedInfo');
+    const replyField = document.getElementById('reply');
     
     mediaFields.style.display = (replyType === 'image' || replyType === 'document') ? 'block' : 'none';
     
+    // تخصيص حقل الرد حسب النوع
+    if (replyType === 'ai') {
+        replyField.placeholder = 'سيتم تجاهل هذا النص - سيستخدم الذكاء الاصطناعي للرد';
+        replyField.value = 'AI_RESPONSE';
+        replyField.readOnly = true;
+    } else {
+        replyField.placeholder = 'اكتب الرد هنا...';
+        replyField.readOnly = false;
+        if (replyField.value === 'AI_RESPONSE') {
+            replyField.value = '';
+        }
+    }
+    
     // Clear upload info when switching away from image/document
-    if (replyType === 'text') {
+    if (replyType === 'text' || replyType === 'ai') {
         uploadedInfo.style.display = 'none';
         document.getElementById('mediaUrl').value = '';
         document.getElementById('filename').value = '';
@@ -761,6 +775,7 @@ function getReplyTypeIcon(replyType) {
     switch(replyType) {
         case 'image': return '🖼️';
         case 'document': return '📄';
+        case 'ai': return '🤖';
         case 'text':
         default: return '💬';
     }

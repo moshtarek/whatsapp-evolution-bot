@@ -156,23 +156,6 @@ export async function onIncoming(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // معالجة خاصة لأمر "ذكي"
-    const smartMatch = text.match(/^ذكي\s+(.+)$/);
-    if (smartMatch) {
-      const prompt = smartMatch[1];
-      
-      // إرسال رسالة انتظار
-      await sendText({ number, text: '🤖 جاري التفكير...' });
-      
-      // الحصول على الرد من الذكاء الاصطناعي
-      const aiResponse = await generateAIResponse(prompt);
-      
-      // إرسال الرد
-      await sendText({ number, text: `🤖 الذكاء الاصطناعي:\n\n${aiResponse}` });
-      
-      return res.status(200).json({ ok: true, ai_response: true });
-    }
-
     // قواعد DB
     const open = isBusinessOpen();
     const rules = await listRules();
@@ -195,6 +178,11 @@ export async function onIncoming(req, res) {
           await sendImage({ number: targetNumber, imageUrl: r.media_url, caption: reply });
         } else if (r.reply_type === 'document' && r.media_url) {
           await sendDocument({ number: targetNumber, documentUrl: r.media_url, filename: r.filename, caption: reply });
+        } else if (r.reply_type === 'ai') {
+          // معالجة الذكاء الاصطناعي
+          await sendText({ number: targetNumber, text: '🤖 جاري التفكير...' });
+          const aiResponse = await generateAIResponse(matched.tail || matched.full);
+          await sendText({ number: targetNumber, text: `🤖 الذكاء الاصطناعي:\n\n${aiResponse}` });
         } else {
           await sendText({ number: targetNumber, text: reply });
         }
