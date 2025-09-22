@@ -31,6 +31,12 @@ async function runMigrations() {
       .sort();
     
     for (const file of files) {
+      // تخطي الملفات الفارغة
+      if (file === '002_add_smart_rule.sql') {
+        console.log(`⏭️  Skipping empty migration: ${file}`);
+        continue;
+      }
+      
       // التحقق من تنفيذ migration سابقاً
       const existing = await db.get('SELECT * FROM migrations WHERE filename = ?', file);
       if (existing) {
@@ -41,6 +47,12 @@ async function runMigrations() {
       // تنفيذ migration
       const migrationPath = path.join(migrationsDir, file);
       const sql = fs.readFileSync(migrationPath, 'utf8');
+      
+      // تخطي الملفات الفارغة أو التعليقات فقط
+      if (sql.trim().startsWith('--') && !sql.includes('CREATE') && !sql.includes('INSERT')) {
+        console.log(`⏭️  Skipping comment-only migration: ${file}`);
+        continue;
+      }
       
       await db.exec(sql);
       await db.run('INSERT INTO migrations (filename) VALUES (?)', file);
