@@ -4,7 +4,8 @@ import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs';
 import { sendText, sendImage, sendDocument } from './services/evolution.js';
-import { generateAIResponse } from './services/openai.js';
+import { generateAIResponse, getAvailableProviders } from './services/ai.js';
+import { getAISettings, updateAISettings } from './models/settings.js';
 import { logger } from './utils/logger.js';
 import { isBusinessOpen, listRules, createRule, updateRule, deleteRule, getRule } from './models/rules.js';
 import { 
@@ -368,5 +369,21 @@ export async function uploadImageHandler(req, res) {
   } catch (err) {
     logger.error('uploadImageHandler error:', err);
     res.status(500).json({ error: err.message });
+  }
+}
+
+// إدارة إعدادات الذكاء الاصطناعي
+export async function getAISettingsHandler(_req, res) {
+  const settings = await getAISettings();
+  const providers = getAvailableProviders();
+  res.json({ settings, providers });
+}
+
+export async function updateAISettingsHandler(req, res) {
+  try {
+    await updateAISettings(req.body);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 }

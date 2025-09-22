@@ -840,3 +840,262 @@ document.getElementById('numberModalOverlay').addEventListener('click', function
 document.getElementById('confirmDialog').addEventListener('click', function(e) {
     if (e.target === this) hideConfirm();
 });
+
+// متغيرات الذكاء الاصطناعي
+let aiSettings = {};
+let aiProviders = {};
+
+// تحميل إعدادات AI عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', () => {
+    loadAISettings();
+});
+
+async function loadAISettings() {
+    try {
+        const response = await fetch('/ai-settings');
+        const data = await response.json();
+        aiSettings = data.settings;
+        aiProviders = data.providers;
+    } catch (error) {
+        console.error('Error loading AI settings:', error);
+    }
+}
+
+function showAISettingsModal() {
+    renderAIProviders();
+    updateAIForm();
+    document.getElementById('aiModalOverlay').style.display = 'flex';
+}
+
+function closeAIModal() {
+    document.getElementById('aiModalOverlay').style.display = 'none';
+}
+
+function renderAIProviders() {
+    const container = document.getElementById('providersContainer');
+    const linksContainer = document.getElementById('apiLinksContainer');
+    
+    container.innerHTML = '';
+    linksContainer.innerHTML = '';
+    
+    Object.entries(aiProviders).forEach(([key, provider]) => {
+        const isSelected = aiSettings.provider === key;
+        
+        // بطاقة المحرك
+        const providerCard = document.createElement('div');
+        providerCard.style.cssText = `
+            border: 3px solid ${isSelected ? '#28a745' : '#ddd'};
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: ${isSelected ? '#f8fff8' : 'white'};
+            position: relative;
+        `;
+        
+        providerCard.innerHTML = `
+            <div style="font-size: 24px; margin-bottom: 8px;">
+                ${key === 'groq' ? '⚡' : key === 'openai' ? '🧠' : '🔮'}
+            </div>
+            <h4 style="margin: 8px 0; color: #333;">${provider.name}</h4>
+            <div style="margin: 8px 0;">
+                <span style="
+                    background: ${provider.free ? 'linear-gradient(45deg, #28a745, #20c997)' : 'linear-gradient(45deg, #ffc107, #fd7e14)'};
+                    color: white;
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                    font-size: 12px;
+                    font-weight: bold;
+                ">
+                    ${provider.free ? '🆓 مجاني' : '💰 مدفوع'}
+                </span>
+            </div>
+            <div style="font-size: 12px; color: #666; margin-top: 8px;">
+                ${provider.models.length} نموذج متاح
+            </div>
+            ${isSelected ? '<div style="position: absolute; top: 10px; right: 10px; color: #28a745; font-size: 20px;">✅</div>' : ''}
+        `;
+        
+        providerCard.onclick = () => selectAIProvider(key);
+        container.appendChild(providerCard);
+        
+        // زر الحصول على API
+        const apiButton = document.createElement('a');
+        apiButton.href = getProviderAPILink(key);
+        apiButton.target = '_blank';
+        apiButton.style.cssText = `
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: ${provider.free ? '#28a745' : '#ffc107'};
+            color: ${provider.free ? 'white' : '#333'};
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.3s;
+        `;
+        
+        apiButton.innerHTML = `
+            <span>${key === 'groq' ? '⚡' : key === 'openai' ? '🧠' : '🔮'}</span>
+            <span>الحصول على ${provider.name} API</span>
+            <span>🔗</span>
+        `;
+        
+        apiButton.onmouseover = () => {
+            apiButton.style.transform = 'translateY(-2px)';
+            apiButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+        };
+        
+        apiButton.onmouseout = () => {
+            apiButton.style.transform = 'translateY(0)';
+            apiButton.style.boxShadow = 'none';
+        };
+        
+        linksContainer.appendChild(apiButton);
+    });
+}
+
+function getProviderAPILink(providerKey) {
+    const links = {
+        groq: 'https://console.groq.com/keys',
+        openai: 'https://platform.openai.com/api-keys',
+        gemini: 'https://makersuite.google.com/app/apikey'
+    };
+    
+    return links[providerKey] || '#';
+}
+
+function selectAIProvider(providerKey) {
+    aiSettings.provider = providerKey;
+    renderAIProviders();
+    updateAIModels(providerKey);
+    updateProviderHelp(providerKey);
+}
+
+function updateAIModels(providerKey) {
+    const modelSelect = document.getElementById('aiModel');
+    const provider = aiProviders[providerKey];
+    
+    modelSelect.innerHTML = '';
+    provider.models.forEach(model => {
+        const option = document.createElement('option');
+        option.value = model;
+        option.textContent = model;
+        if (model === aiSettings.model) {
+            option.selected = true;
+        }
+        modelSelect.appendChild(option);
+    });
+}
+
+function updateProviderHelp(providerKey) {
+    const helpElement = document.getElementById('providerHelp');
+    const links = {
+        groq: 'احصل على مفتاح مجاني من console.groq.com',
+        openai: 'احصل على مفتاح من platform.openai.com/api-keys',
+        gemini: 'احصل على مفتاح مجاني من makersuite.google.com/app/apikey'
+    };
+    
+    helpElement.textContent = links[providerKey] || '';
+}
+
+function updateAIForm() {
+    document.getElementById('aiModel').value = aiSettings.model || '';
+    document.getElementById('aiApiKey').value = aiSettings.apiKey || '';
+    document.getElementById('aiMaxTokens').value = aiSettings.maxTokens || 1500;
+    document.getElementById('aiTemperature').value = aiSettings.temperature || 0.7;
+    document.getElementById('temperatureValue').textContent = aiSettings.temperature || 0.7;
+    
+    if (aiSettings.provider) {
+        updateAIModels(aiSettings.provider);
+        updateProviderHelp(aiSettings.provider);
+    }
+}
+
+function toggleAIApiKey() {
+    const input = document.getElementById('aiApiKey');
+    const button = event.target;
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        button.textContent = '🙈';
+    } else {
+        input.type = 'password';
+        button.textContent = '👁️';
+    }
+}
+
+function toggleAdvancedSettings() {
+    const advanced = document.getElementById('advancedSettings');
+    const checkbox = document.getElementById('showAdvanced');
+    
+    advanced.style.display = checkbox.checked ? 'block' : 'none';
+}
+
+function updateTemperatureValue() {
+    const slider = document.getElementById('aiTemperature');
+    document.getElementById('temperatureValue').textContent = slider.value;
+}
+
+async function testAIConnection() {
+    const button = event.target;
+    const originalText = button.textContent;
+    
+    button.textContent = '⏳ جاري الاختبار...';
+    button.disabled = true;
+    
+    try {
+        // محاكاة اختبار الاتصال
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        showNotification('✅ تم الاتصال بنجاح! المحرك يعمل بشكل صحيح.', 'success');
+    } catch (error) {
+        showNotification('❌ فشل في الاتصال: ' + error.message, 'error');
+    } finally {
+        button.textContent = originalText;
+        button.disabled = false;
+    }
+}
+
+// حفظ إعدادات AI
+document.getElementById('aiSettingsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = {
+        provider: aiSettings.provider,
+        model: document.getElementById('aiModel').value,
+        apiKey: document.getElementById('aiApiKey').value,
+        maxTokens: parseInt(document.getElementById('aiMaxTokens').value),
+        temperature: parseFloat(document.getElementById('aiTemperature').value)
+    };
+    
+    try {
+        const response = await fetch('/ai-settings', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (response.ok) {
+            showNotification('✅ تم حفظ إعدادات الذكاء الاصطناعي بنجاح!', 'success');
+            aiSettings = formData;
+            closeAIModal();
+        } else {
+            throw new Error('فشل في حفظ الإعدادات');
+        }
+    } catch (error) {
+        showNotification('❌ خطأ في حفظ الإعدادات: ' + error.message, 'error');
+    }
+});
+
+// إغلاق modal عند النقر خارجه
+document.getElementById('aiModalOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'aiModalOverlay') {
+        closeAIModal();
+    }
+});

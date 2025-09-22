@@ -9,7 +9,8 @@ import {
   listRulesHandler, getRuleHandler, createRuleHandler, updateRuleHandler, deleteRuleHandler,
   listAuthorizedNumbersHandler, getAuthorizedNumberHandler, createAuthorizedNumberHandler, 
   updateAuthorizedNumberHandler, deleteAuthorizedNumberHandler,
-  uploadImageHandler, uploadMiddleware
+  uploadImageHandler, uploadMiddleware,
+  getAISettingsHandler, updateAISettingsHandler
 } from './routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -68,6 +69,10 @@ app.get('/authorized-numbers/:id', getAuthorizedNumberHandler);
 app.post('/authorized-numbers', createAuthorizedNumberHandler);
 app.put('/authorized-numbers/:id', updateAuthorizedNumberHandler);
 app.delete('/authorized-numbers/:id', deleteAuthorizedNumberHandler);
+
+// إعدادات الذكاء الاصطناعي
+app.get('/ai-settings', getAISettingsHandler);
+app.put('/ai-settings', updateAISettingsHandler);
 
 app.listen(config.server.port, config.server.host, () => {
   const host = config.server.host === '0.0.0.0' ? 'all networks' : config.server.host;

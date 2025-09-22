@@ -1,6 +1,6 @@
 {
   "name": "whatsapp-evolution-bot",
-  "version": "1.7.4",
+  "version": "1.8.5",
   "description": "WhatsApp bot over Evolution API (Node.js + Express + SQLite rules engine) — clean, DB-only",
   "main": "src/index.js",
   "type": "module",
@@ -10,6 +10,7 @@
     "start": "node src/index.js",
     "db:init": "node src/db.js init",
     "db:seed": "node src/db.js seed",
+    "db:migrate": "node db/migrate.js",
     "db:reset": "node src/db.js reset",
     "db:migrate": "node src/db.js migrate",
     "db:migrate-auth": "node src/db.js migrate-auth"

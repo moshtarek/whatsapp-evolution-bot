@@ -28,3 +28,19 @@ CREATE INDEX IF NOT EXISTS idx_rules_active_priority ON rules(active, priority);
 CREATE INDEX IF NOT EXISTS idx_rules_matchtype ON rules(match_type);
 CREATE INDEX IF NOT EXISTS idx_rules_lang ON rules(lang);
 CREATE INDEX IF NOT EXISTS idx_authorized_numbers_phone ON authorized_numbers(phone_number, active);
+
+-- جدول إعدادات الذكاء الاصطناعي
+CREATE TABLE IF NOT EXISTS ai_settings (
+  id INTEGER PRIMARY KEY DEFAULT 1,
+  provider TEXT NOT NULL DEFAULT 'groq',
+  model TEXT NOT NULL DEFAULT 'llama-3.1-8b-instant',
+  apiKey TEXT DEFAULT '',
+  maxTokens INTEGER DEFAULT 1500,
+  temperature REAL DEFAULT 0.7,
+  createdAt TEXT DEFAULT (datetime('now')),
+  updatedAt TEXT DEFAULT (datetime('now'))
+);
+
+-- إدراج الإعدادات الافتراضية
+INSERT OR IGNORE INTO ai_settings (id, provider, model, apiKey, maxTokens, temperature)
+VALUES (1, 'groq', 'llama-3.1-8b-instant', '', 1500, 0.7);

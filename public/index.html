@@ -743,6 +743,9 @@
                 <button class="add-btn" onclick="showModal()">
                     ➕ إضافة قاعدة جديدة
                 </button>
+                <button class="add-btn" onclick="showAISettingsModal()" style="margin-left: 10px;">
+                    🤖 إعدادات الذكاء الاصطناعي
+                </button>
                 <div class="search-container">
                     <input type="text" id="searchInput" placeholder="🔍 البحث في القواعد (النمط أو الرد...)" onkeyup="filterRules()">
                     <div class="search-filters">
@@ -947,6 +950,84 @@
                 <button class="btn btn-confirm-delete" onclick="confirmDelete()">حذف 🗑️</button>
                 <button class="btn btn-confirm-cancel" onclick="hideConfirm()">إلغاء</button>
             </div>
+        </div>
+    </div>
+
+    <!-- AI Settings Modal -->
+    <div class="modal-overlay" id="aiModalOverlay">
+        <div class="modal" style="max-width: 700px;">
+            <h2>🤖 إعدادات الذكاء الاصطناعي</h2>
+            <form id="aiSettingsForm">
+                
+                <!-- اختيار المحرك -->
+                <div class="form-group">
+                    <label>محرك الذكاء الاصطناعي:</label>
+                    <div id="providersContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                        <!-- سيتم ملؤها بـ JavaScript -->
+                    </div>
+                </div>
+
+                <!-- أزرار الحصول على API -->
+                <div class="form-group">
+                    <label>الحصول على مفتاح API:</label>
+                    <div id="apiLinksContainer" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+                        <!-- سيتم ملؤها بـ JavaScript -->
+                    </div>
+                </div>
+
+                <!-- النموذج -->
+                <div class="form-group">
+                    <label for="aiModel">النموذج:</label>
+                    <select id="aiModel" required style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px;">
+                        <!-- سيتم ملؤها بـ JavaScript -->
+                    </select>
+                </div>
+
+                <!-- مفتاح API -->
+                <div class="form-group">
+                    <label for="aiApiKey">مفتاح API:</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="password" id="aiApiKey" placeholder="أدخل مفتاح API" style="flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                        <button type="button" onclick="toggleAIApiKey()" style="padding: 12px 16px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer;">👁️</button>
+                    </div>
+                    <small id="providerHelp" style="color: #666; font-size: 12px; margin-top: 5px; display: block;"></small>
+                </div>
+
+                <!-- الإعدادات المتقدمة -->
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="showAdvanced" onchange="toggleAdvancedSettings()">
+                        <span>إعدادات متقدمة</span>
+                    </label>
+                </div>
+
+                <div id="advancedSettings" style="display: none; background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 15px 0;">
+                    <div class="form-group">
+                        <label for="aiMaxTokens">الحد الأقصى للـ Tokens:</label>
+                        <input type="number" id="aiMaxTokens" min="100" max="8000" value="1500" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px;">
+                        <small style="color: #666; font-size: 12px;">كلما زاد العدد، كانت الردود أطول (1500 = حوالي 4500 حرف عربي)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="aiTemperature">درجة الإبداع (0 = منطقي، 1 = إبداعي):</label>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <input type="range" id="aiTemperature" min="0" max="1" step="0.1" value="0.7" oninput="updateTemperatureValue()" style="flex: 1;">
+                            <span id="temperatureValue" style="font-weight: bold; min-width: 30px;">0.7</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px; padding-top: 20px; border-top: 1px solid #eee;">
+                    <button type="button" onclick="testAIConnection()" style="padding: 12px 20px; background: #17a2b8; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+                        🧪 اختبار الاتصال
+                    </button>
+                    <button type="submit" style="padding: 12px 20px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+                        💾 حفظ الإعدادات
+                    </button>
+                    <button type="button" onclick="closeAIModal()" style="padding: 12px 20px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+                        ❌ إلغاء
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
