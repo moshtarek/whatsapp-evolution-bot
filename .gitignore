@@ -6,6 +6,7 @@ yarn-debug.log*
 yarn-error.log*
 .history/
 *.log
-db/*.db
-db/*.sqlite
-db/*.sqlite3
+# تضمين مجلد db بالكامل في Git و Docker
+# db/*.db
+# db/*.sqlite
+# db/*.sqlite3

@@ -10,7 +10,7 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./db:/app/db
+      # مجلد db مضمن في الصورة - لا حاجة لربطه كـ volume
       - ./images:/app/images
     environment:
       - NODE_ENV=production

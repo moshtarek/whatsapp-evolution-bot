@@ -7,3 +7,4 @@ npm-debug.log
 README.md
 docker-compose.yml
 .history
+# تضمين مجلد db بالكامل - لا نستبعد أي شيء منه

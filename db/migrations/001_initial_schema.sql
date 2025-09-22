@@ -25,12 +25,14 @@ CREATE TABLE IF NOT EXISTS authorized_numbers (
 );
 
 CREATE TABLE IF NOT EXISTS ai_settings (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  provider TEXT DEFAULT 'groq',
-  model TEXT DEFAULT 'llama-3.1-8b-instant',
-  api_key TEXT,
-  created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now'))
+  id INTEGER PRIMARY KEY DEFAULT 1,
+  provider TEXT NOT NULL DEFAULT 'groq',
+  model TEXT NOT NULL DEFAULT 'llama-3.1-8b-instant',
+  apiKey TEXT DEFAULT '',
+  maxTokens INTEGER DEFAULT 1500,
+  temperature REAL DEFAULT 0.7,
+  createdAt TEXT DEFAULT (datetime('now')),
+  updatedAt TEXT DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS migrations (
