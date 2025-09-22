@@ -911,7 +911,7 @@ function renderAIProviders() {
         
         providerCard.innerHTML = `
             <div style="font-size: 24px; margin-bottom: 8px;">
-                ${key === 'groq' ? '⚡' : key === 'openai' ? '🧠' : '🔮'}
+                ${key === 'groq' ? '⚡' : key === 'openai' ? '🧠' : key === 'deepseek' ? '🧠' : '🔮'}
             </div>
             <h4 style="margin: 8px 0; color: #333;">${provider.name}</h4>
             <div style="margin: 8px 0;">
@@ -977,6 +977,7 @@ function getProviderAPILink(providerKey) {
     const links = {
         groq: 'https://console.groq.com/keys',
         openai: 'https://platform.openai.com/api-keys',
+        deepseek: 'https://platform.deepseek.com/api_keys',
         gemini: 'https://makersuite.google.com/app/apikey'
     };
     
@@ -1011,6 +1012,7 @@ function updateProviderHelp(providerKey) {
     const links = {
         groq: 'احصل على مفتاح مجاني من console.groq.com',
         openai: 'احصل على مفتاح من platform.openai.com/api-keys',
+        deepseek: 'احصل على مفتاح من platform.deepseek.com/api_keys',
         gemini: 'احصل على مفتاح مجاني من makersuite.google.com/app/apikey'
     };
     

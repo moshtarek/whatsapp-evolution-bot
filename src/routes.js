@@ -6,6 +6,8 @@ import fs from 'fs';
 import { sendText, sendImage, sendDocument } from './services/evolution.js';
 import { generateAIResponse, getAvailableProviders } from './services/ai.js';
 import { getAISettings, updateAISettings } from './models/settings.js';
+import { parseAIResponse, shouldGenerateImage } from './services/aiResponseParser.js';
+import { generateImage, canGenerateImages } from './services/imageGeneration.js';
 import { logger } from './utils/logger.js';
 import { isBusinessOpen, listRules, createRule, updateRule, deleteRule, getRule } from './models/rules.js';
 import { 
@@ -181,8 +183,52 @@ export async function onIncoming(req, res) {
         } else if (r.reply_type === 'ai') {
           // معالجة الذكاء الاصطناعي
           await sendText({ number: targetNumber, text: '🤖 جاري التفكير...' });
-          const aiResponse = await generateAIResponse(matched.tail || matched.full);
-          await sendText({ number: targetNumber, text: `🤖 الذكاء الاصطناعي:\n\n${aiResponse}` });
+          
+          const userPrompt = matched.tail || matched.full;
+          
+          // التحقق من طلب إنشاء صورة
+          if (shouldGenerateImage(userPrompt)) {
+            const canGenerate = await canGenerateImages();
+            
+            if (canGenerate) {
+              await sendText({ number: targetNumber, text: '🎨 جاري إنشاء الصورة...' });
+              
+              const imageResult = await generateImage(userPrompt);
+              
+              if (imageResult.success) {
+                await sendImage({ 
+                  number: targetNumber, 
+                  imageUrl: imageResult.imageUrl, 
+                  caption: `🎨 تم إنشاء الصورة بنجاح!\n\n📝 الوصف المحسن: ${imageResult.revisedPrompt}` 
+                });
+              } else {
+                await sendText({ number: targetNumber, text: `❌ ${imageResult.error}` });
+              }
+            } else {
+              // استخدام AI عادي للرد على طلب الصورة
+              const aiResponse = await generateAIResponse(userPrompt);
+              await sendText({ number: targetNumber, text: `🤖 الذكاء الاصطناعي:\n\n${aiResponse}` });
+            }
+          } else {
+            // رد AI عادي
+            const aiResponse = await generateAIResponse(userPrompt);
+            
+            // تحليل الرد للبحث عن صور
+            const parsedResponse = parseAIResponse(aiResponse);
+            
+            if (parsedResponse.hasImages) {
+              // إرسال النص أولاً
+              await sendText({ number: targetNumber, text: `🤖 الذكاء الاصطناعي:\n\n${parsedResponse.text}` });
+              
+              // إرسال الصور
+              for (const imageUrl of parsedResponse.images) {
+                await sendImage({ number: targetNumber, imageUrl: imageUrl, caption: '🖼️ صورة من الذكاء الاصطناعي' });
+              }
+            } else {
+              // رد نصي عادي
+              await sendText({ number: targetNumber, text: `🤖 الذكاء الاصطناعي:\n\n${aiResponse}` });
+            }
+          }
         } else {
           await sendText({ number: targetNumber, text: reply });
         }

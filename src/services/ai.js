@@ -16,6 +16,12 @@ const AI_PROVIDERS = {
     models: ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo'],
     free: false
   },
+  deepseek: {
+    name: 'DeepSeek',
+    baseURL: 'https://api.deepseek.com/v1',
+    models: ['deepseek-chat', 'deepseek-coder'],
+    free: false
+  },
   gemini: {
     name: 'Google Gemini',
     baseURL: 'https://generativelanguage.googleapis.com/v1beta',
@@ -35,7 +41,7 @@ export async function generateAIResponse(prompt) {
       return `عذراً، لم يتم تكوين مفتاح API لـ ${AI_PROVIDERS[provider]?.name || provider}. يرجى إضافة المفتاح في الإعدادات.`;
     }
 
-    if (provider === 'groq' || provider === 'openai') {
+    if (provider === 'groq' || provider === 'openai' || provider === 'deepseek') {
       return await generateOpenAICompatibleResponse(provider, model, apiKey, prompt);
     } else if (provider === 'gemini') {
       return await generateGeminiResponse(model, apiKey, prompt);
