@@ -13,7 +13,7 @@ export async function generateAIResponse(prompt) {
     }
 
     const completion = await client.chat.completions.create({
-      model: "llama3-8b-8192",
+      model: "llama-3.1-8b-instant",
       messages: [
         {
           role: "system",
@@ -24,7 +24,7 @@ export async function generateAIResponse(prompt) {
           content: prompt
         }
       ],
-      max_tokens: 500,
+      max_tokens: 1500,
       temperature: 0.7,
     });
 
