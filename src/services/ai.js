@@ -25,7 +25,7 @@ const AI_PROVIDERS = {
   gemini: {
     name: 'Google Gemini',
     baseURL: 'https://generativelanguage.googleapis.com/v1beta',
-    models: ['gemini-pro', 'gemini-pro-vision'],
+    models: ['gemini-1.5-flash', 'gemini-1.5-pro'],
     free: true
   }
 };
@@ -96,6 +96,12 @@ async function generateGeminiResponse(model, apiKey, prompt) {
   });
 
   const data = await response.json();
+  
+  if (!response.ok) {
+    console.error('Gemini API Error:', data);
+    return `عذراً، خطأ في Gemini API: ${data.error?.message || 'خطأ غير معروف'}`;
+  }
+  
   return data.candidates?.[0]?.content?.parts?.[0]?.text || 'عذراً، لم أتمكن من الحصول على رد من Gemini.';
 }
 

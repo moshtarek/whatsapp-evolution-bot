@@ -50,15 +50,8 @@ async function reset() {
 }
 
 async function migrate() {
-  const db = await getDB();
-  const migratePath = path.join(__dirname, '..', 'db', 'migrate.sql');
-  try {
-    await runSQLFromFile(db, migratePath);
-    logger.info('DB migrated successfully');
-  } catch (err) {
-    logger.info('Migration already applied or error:', err.message);
-  }
-  await db.close();
+  const { runMigrations } = await import('./migrate.js');
+  await runMigrations();
 }
 
 export async function listAuthorizedNumbers() {

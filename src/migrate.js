@@ -1,4 +1,4 @@
-import { getDB } from '../src/db.js';
+import { getDB } from './db.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -20,7 +20,7 @@ async function runMigrations() {
     `);
     
     // قراءة ملفات migrations
-    const migrationsDir = path.join(__dirname, 'migrations');
+    const migrationsDir = path.join(__dirname, '..', 'db', 'migrations');
     if (!fs.existsSync(migrationsDir)) {
       console.log('No migrations directory found');
       return;
@@ -31,26 +31,22 @@ async function runMigrations() {
       .sort();
     
     for (const file of files) {
-      // تخطي الملفات الفارغة
-      if (file === '002_add_smart_rule.sql') {
-        console.log(`⏭️  Skipping empty migration: ${file}`);
-        continue;
-      }
-      
       // التحقق من تنفيذ migration سابقاً
       const existing = await db.get('SELECT * FROM migrations WHERE filename = ?', file);
       if (existing) {
-        console.log(`Migration ${file} already executed`);
+        console.log(`✅ Migration ${file} already executed`);
         continue;
       }
       
       // تنفيذ migration
       const migrationPath = path.join(migrationsDir, file);
-      const sql = fs.readFileSync(migrationPath, 'utf8');
+      const sql = fs.readFileSync(migrationPath, 'utf8').trim();
       
       // تخطي الملفات الفارغة أو التعليقات فقط
-      if (sql.trim().startsWith('--') && !sql.includes('CREATE') && !sql.includes('INSERT')) {
-        console.log(`⏭️  Skipping comment-only migration: ${file}`);
+      if (!sql || sql.startsWith('--') && !sql.includes('CREATE') && !sql.includes('INSERT') && !sql.includes('ALTER')) {
+        console.log(`⏭️  Skipping empty migration: ${file}`);
+        // تسجيل كمنفذ لتجنب إعادة المحاولة
+        await db.run('INSERT INTO migrations (filename) VALUES (?)', file);
         continue;
       }
       
@@ -60,11 +56,16 @@ async function runMigrations() {
       console.log(`✅ Executed migration: ${file}`);
     }
     
-    console.log('All migrations completed');
+    console.log('🎉 All migrations completed successfully');
   } catch (error) {
-    console.error('Migration error:', error);
+    console.error('❌ Migration error:', error);
     process.exit(1);
   }
 }
 
-runMigrations();
+export { runMigrations };
+
+// تشغيل مباشر إذا تم استدعاء الملف
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  runMigrations();
+}
