@@ -5,7 +5,7 @@
 ## 🐳 Docker Hub
 الصورة متوفرة على Docker Hub ومتوافقة مع جميع الأنظمة (AMD64 + ARM64):
 ```bash
-docker pull moshtarek/whatsapp-evolution-bot:1.4.0
+docker pull moshtarek/whatsapp-evolution-bot:2.4.3
 # أو الإصدار الأحدث
 docker pull moshtarek/whatsapp-evolution-bot:latest
 ```
@@ -206,6 +206,13 @@ curl -X DELETE http://localhost:3001/rules/1
 ---
 
 ## 📋 سجل التحديثات
+
+### v2.4.3 (2025-01-24)
+- ✅ تحديث نماذج Gemini AI مع جميع الخيارات المتاحة
+- ✅ إصلاحات في تكامل Gemini API
+- ✅ تحسين نظام Migration الموحد
+- ✅ دعم Gemini 2.0 Flash و 2.5 Flash models
+- ✅ صورة Docker محدثة ومتوافقة مع AMD64 و ARM64
 
 ### v1.4.0 (2025-01-21)
 - ✅ دعم إرسال الصور والملفات
